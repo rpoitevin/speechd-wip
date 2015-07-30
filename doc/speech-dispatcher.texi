@@ -2752,11 +2752,6 @@ punctuation_some=NULL
 203 OK SETTINGS RECEIVED
 @end example
 
-@item AUDIO
-Audio has exactly the same structure as @code{SET}, but is transmitted
-only once immediatelly after @code{INIT} to transmit the requested audio
-parameters and tell the output module to open the audio device.
-
 @item QUIT
 Terminates the output module. It should send the response, deallocate
 all the resources, close all descriptors, terminate all child

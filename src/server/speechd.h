@@ -111,6 +111,12 @@ typedef struct {
 } TFDSetElement;
 
 typedef struct {
+	int fd;			/* File descriptor the module is on. */
+	guint fd_source; 	/* Used to store the GSource ID for watching fd activity in the main loop */
+	char *output_module; 	/* Output module name. (e.g. "festival", "flite", "apollo", ...) */
+} TAudioFDSetElement;
+
+typedef struct {
 	char *pattern;
 	TFDSetElement val;
 } TFDSetClientSpecific;
@@ -153,6 +159,7 @@ struct {
 	char *communication_method;
 	int communication_method_set;
 	char *socket_path;
+	char *audio_socket_path;
 	int socket_path_set;
 	int port, port_set;
 	int localhost_access_only, localhost_access_only_set;
@@ -251,6 +258,8 @@ int isanum(const char *str);
  where to refer relative paths. filename can be either
  absolute (starting with slash) or relative. */
 char *spd_get_path(char *filename, char *startdir);
+
+int make_local_socket(const char *filename);
 
 /* Functions used in speechd.c only */
 int speechd_connection_new(int server_socket);

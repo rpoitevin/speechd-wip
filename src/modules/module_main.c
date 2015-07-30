@@ -31,7 +31,6 @@
 #include <pthread.h>
 #include <glib.h>
 #include <dotconf.h>
-#include <ltdl.h>
 
 #include <spd_utils.h>
 #include "module_utils.h"
@@ -77,10 +76,7 @@ int main(int argc, char *argv[])
 	char *configfilename = NULL;
 	char *status_info = NULL;
 
-	/* Initialize ltdl's list of preloaded audio backends. */
-	LTDL_SET_PRELOADED_SYMBOLS();
 	module_num_dc_options = 0;
-	module_audio_id = 0;
 
 	if (argc >= 2) {
 		configfilename = g_strdup(argv[1]);
@@ -149,6 +145,16 @@ int main(int argc, char *argv[])
 		exit(1);
 	}
 
+	ret = module_audio_init(&status_info);
+	
+	if (ret != 0) {
+		printf("399-%s\n", status_info);
+		printf("%s\n", "399 ERR CANT INIT AUDIO");
+		g_free(status_info);
+		module_close();
+		exit(1);
+	}
+
 	printf("299-%s\n", status_info);
 	ret = printf("%s\n", "299 OK LOADED SUCCESSFULLY");
 
@@ -189,8 +195,6 @@ int main(int argc, char *argv[])
 		PROCESS_CMD(LIST VOICES, do_list_voices)
 		    else
 		PROCESS_CMD(SET, do_set)
-		    else
-		PROCESS_CMD(AUDIO, do_audio)
 		    else
 		PROCESS_CMD(LOGLEVEL, do_loglevel)
 		    else

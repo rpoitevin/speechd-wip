@@ -31,8 +31,10 @@
 #include <sys/stat.h>
 #include <sys/socket.h>
 #include <sys/un.h>
+#include <ltdl.h>
 
 #include "speechd.h"
+#include "audio.h"
 
 /* Declare dotconf functions and data structures*/
 #include "configuration.h"
@@ -73,6 +75,10 @@ static gboolean server_process_incoming (gint          fd,
 				  gpointer      data);
 
 static gboolean client_process_incoming (gint          fd,
+				  GIOCondition  condition,
+				  gpointer      data);
+
+static gboolean audio_process_incoming (gint           fd,
 				  GIOCondition  condition,
 				  gpointer      data);
 
@@ -868,6 +874,7 @@ int make_local_socket(const char *filename)
 		FATAL("listen() failed for local socket");
 	}
 
+	MSG(5, "Successfully opened local socket at %s", filename);
 	return sock;
 }
 
@@ -912,6 +919,7 @@ int make_inet_socket(const int port)
 		    ("listen() failed for inet socket, another Speech Dispatcher running?");
 	}
 
+	MSG(5, "Successfully opened inet socket on port %d", port);
 	return server_socket;
 }
 
@@ -982,6 +990,7 @@ int main(int argc, char *argv[])
 	char *spawn_communication_method = NULL;
 	int spawn_port = 0;
 	char *spawn_socket_path = NULL;
+	char *status_info;
 
 	/* Strip all permisions for 'others' from the files created */
 	umask(007);
@@ -991,6 +1000,9 @@ int main(int argc, char *argv[])
 	SpeechdOptions.log_level = 1;
 	custom_logfile = NULL;
 	custom_log_kind = NULL;
+
+	/* Initialize ltdl's list of preloaded audio backends. */
+	LTDL_SET_PRELOADED_SYMBOLS();
 
 	/* initialize i18n support */
 	i18n_init();
@@ -1117,8 +1129,11 @@ int main(int argc, char *argv[])
 		exit(1);
 	}
 
+	/* We need this first since modules will connect to it */
+	speechd_audio_socket_init();
+	
 	speechd_init();
-
+	
 	/* Handle socket_path 'default' */
 	// TODO: This is a hack, we should do that at appropriate places...
 	if (!strcmp(SpeechdOptions.socket_path, "default")) {
@@ -1238,6 +1253,8 @@ int main(int argc, char *argv[])
 	g_unix_signal_add(SIGUSR1, speechd_reload_dead_modules, NULL);
 	(void)signal(SIGPIPE, SIG_IGN);
 
+	speechd_audio_init();
+	
 	MSG(4, "Creating new thread for speak()");
 	ret = pthread_create(&speak_thread, NULL, speak, NULL);
 	if (ret != 0)
@@ -1281,6 +1298,8 @@ int main(int argc, char *argv[])
 	if (close(server_socket) == -1)
 		MSG(2, "close() failed: %s", strerror(errno));
 
+	speechd_audio_cleanup();
+	
 	MSG(4, "Removing pid file");
 	destroy_pid_file();
 

@@ -94,6 +94,7 @@ int set_debug_all(int debug);
 int set_debug_destination_all(char *debug_destination);
 
 TFDSetElement *default_fd_set(void);
+TAudioFDSetElement *default_audio_fd_set(void);
 
 char *set_param_str(char *parameter, char *value);
 

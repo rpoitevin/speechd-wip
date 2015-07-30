@@ -43,4 +43,18 @@ void spd_audio_set_loglevel(AudioID * id, int level);
 
 char const *spd_audio_get_playcmd(AudioID * id);
 
+/* Speech dispatcher server functions */
+
+/* speechd_play_audio() reads audio data and plays it */
+int speechd_play_audio(int fd);
+
+int speechd_audio_connection_new(int audio_socket);
+/* Initialize the audio socket */
+void speechd_audio_socket_init(void);
+/* Initialize the audio backend based on user's settings in a new thread */
+void speechd_audio_init(void);
+
+/* Clean up audio socket and module */
+void speechd_audio_cleanup(void);
+
 #endif /* ifndef #__SPD_AUDIO_H */

@@ -313,18 +313,6 @@ OutputModule *load_output_module(char *mod_name, char *mod_prog,
 		output_module_debug(module);
 	}
 
-	/* Initialize audio settings */
-	ret = output_send_audio_settings(module);
-	if (ret != 0) {
-		MSG(1,
-		    "ERROR: Can't initialize audio in output module, see reason above.");
-		module->working = 0;
-		kill(module->pid, 9);
-		waitpid(module->pid, NULL, WNOHANG);
-		destroy_module(module);
-		return NULL;
-	}
-
 	/* Send log level configuration setting */
 	ret = output_send_loglevel_setting(module);
 	if (ret != 0) {

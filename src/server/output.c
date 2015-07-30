@@ -465,29 +465,6 @@ int output_send_settings(TSpeechDMessage * msg, OutputModule * output)
 		g_string_append_printf(set_str, #name"=NULL\n"); \
 	}
 
-int output_send_audio_settings(OutputModule * output)
-{
-	GString *set_str;
-	int err;
-
-	MSG(4, "Module set parameters.");
-	set_str = g_string_new("");
-	ADD_SET_STR(audio_output_method);
-	ADD_SET_STR(audio_oss_device);
-	ADD_SET_STR(audio_alsa_device);
-	ADD_SET_STR(audio_nas_server);
-	ADD_SET_STR(audio_pulse_server);
-	ADD_SET_INT(audio_pulse_min_length);
-
-	SEND_CMD_N("AUDIO");
-	SEND_DATA_N(set_str->str);
-	SEND_CMD_N(".");
-
-	g_string_free(set_str, 1);
-
-	return 0;
-}
-
 int output_send_loglevel_setting(OutputModule * output)
 {
 	GString *set_str;

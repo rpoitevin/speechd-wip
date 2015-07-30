@@ -41,11 +41,9 @@
 #include <sys/ipc.h>
 
 #include <speechd_types.h>
-#include "spd_audio.h"
+#include <spd_audio_plugin.h>
 
 int log_level;
-
-AudioID *module_audio_id;
 
 SPDMsgSettings msg_settings;
 SPDMsgSettings msg_settings_old;

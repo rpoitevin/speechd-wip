@@ -401,8 +401,8 @@ void *_generic_speak(void *nothing)
 					homedir =
 					    g_strdup("UNKNOWN_HOME_DIRECTORY");
 
-				play_command =
-				    spd_audio_get_playcmd(module_audio_id);
+// 				play_command =
+// 				    spd_audio_get_playcmd(module_audio_id);
 				if (play_command == NULL) {
 					DBG("This audio backend has no default play command; using \"play\"\n");
 					play_command = "play";

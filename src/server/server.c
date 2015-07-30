@@ -31,6 +31,7 @@
 #include "speaking.h"
 #include "sem_functions.h"
 #include "history.h"
+#include "speechd_defines.h"
 
 int last_message_id = 0;
 

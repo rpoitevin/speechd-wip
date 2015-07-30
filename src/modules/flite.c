@@ -29,7 +29,6 @@
 #include <semaphore.h>
 
 #include <flite/flite.h>
-#include "spd_audio.h"
 
 #include <speechd_types.h>
 
@@ -189,13 +188,14 @@ int module_stop(void)
 	DBG("flite: stop()\n");
 
 	flite_stop = 1;
-	if (module_audio_id) {
-		DBG("Stopping audio");
-		ret = spd_audio_stop(module_audio_id);
-		if (ret != 0)
-			DBG("WARNING: Non 0 value from spd_audio_stop: %d",
-			    ret);
-	}
+	// TODO: Add a way for modules to request speech stop maybe ?
+	//if (module_audio_id) {
+	//	DBG("Stopping audio");
+	//	ret = spd_audio_stop(module_audio_id);
+	//	if (ret != 0)
+	//		DBG("WARNING: Non 0 value from spd_audio_stop: %d",
+	//		    ret);
+	//}
 
 	return 0;
 }

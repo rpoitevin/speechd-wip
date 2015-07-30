@@ -537,6 +537,20 @@ TFDSetElement *default_fd_set(void)
 	return (new);
 }
 
+TAudioFDSetElement *default_audio_fd_set(void)
+{
+	TAudioFDSetElement *new;
+
+	new = (TAudioFDSetElement *) g_malloc(sizeof(TAudioFDSetElement));
+
+	/* Fill with the global settings values */
+	/* We can't use global_fdset copy as this
+	   returns static structure and we need dynamic */
+	new->output_module = g_strdup(GlobalFDSet.output_module);
+
+	return (new);
+}
+
 int get_client_uid_by_fd(int fd)
 {
 	int *uid;

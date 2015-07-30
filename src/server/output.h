@@ -40,7 +40,6 @@ void output_set_speaking_monitor(TSpeechDMessage * msg, OutputModule * output);
 GString *output_read_reply(OutputModule * output);
 int output_send_data(char *cmd, OutputModule * output, int wfr);
 int output_send_settings(TSpeechDMessage * msg, OutputModule * output);
-int output_send_audio_settings(OutputModule * output);
 int output_send_loglevel_setting(OutputModule * output);
 int output_module_is_speaking(OutputModule * output, char **index_mark);
 int waitpid_with_timeout(pid_t pid, int *status_ptr, int options,

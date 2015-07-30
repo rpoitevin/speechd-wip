@@ -36,7 +36,6 @@
 
 #include <picoapi.h>
 
-#include "spd_audio.h"
 #include <speechd_types.h>
 #include "module_utils.h"
 

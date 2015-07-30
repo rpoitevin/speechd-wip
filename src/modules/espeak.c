@@ -48,7 +48,6 @@
 #endif
 
 /* Speech Dispatcher includes. */
-#include "spd_audio.h"
 #include <speechd_types.h>
 #include "module_utils.h"
 
@@ -570,22 +569,23 @@ static void *_espeak_stop_or_pause(void *nothing)
 		pthread_cond_broadcast(&playback_queue_condition);
 		pthread_mutex_unlock(&playback_queue_mutex);
 
-		if (module_audio_id) {
-			DBG(DBG_MODNAME " Stopping audio.");
-			ret = spd_audio_stop(module_audio_id);
-			DBG_WARN(ret == 0,
-				 "spd_audio_stop returned non-zero value.");
-			while (is_thread_busy(&espeak_play_suspended_mutex)) {
-				ret = spd_audio_stop(module_audio_id);
-				DBG_WARN(ret == 0,
-					 "spd_audio_stop returned non-zero value.");
-				g_usleep(5000);
-			}
-		} else {
-			while (is_thread_busy(&espeak_play_suspended_mutex)) {
-				g_usleep(5000);
-			}
-		}
+		/* TODO: Add a way to request the server stop audio playback */
+// 		if (module_audio_id) {
+// 			DBG(MODNAME ": Stopping audio.");
+// 			ret = spd_audio_stop(module_audio_id);
+// 			DBG_WARN(ret == 0,
+// 				 "spd_audio_stop returned non-zero value.");
+// 			while (is_thread_busy(&espeak_play_suspended_mutex)) {
+// 				ret = spd_audio_stop(module_audio_id);
+// 				DBG_WARN(ret == 0,
+// 					 "spd_audio_stop returned non-zero value.");
+// 				g_usleep(5000);
+// 			}
+// 		} else {
+// 			while (is_thread_busy(&espeak_play_suspended_mutex)) {
+// 				g_usleep(5000);
+// 			}
+// 		}
 
 		DBG(DBG_MODNAME " Waiting for synthesis to stop.");
 		ret = espeak_Cancel();

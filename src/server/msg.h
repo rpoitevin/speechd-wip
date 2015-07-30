@@ -24,7 +24,8 @@
 #ifndef MSG_H
 #define MSG_H
 
-#define NEWLINE							"\r\n"
+#include <speechd_defines.h>
+
 #define OK_LANGUAGE_SET					"201 OK LANGUAGE SET" NEWLINE
 #define OK_PRIORITY_SET					"202 OK PRIORITY SET" NEWLINE
 #define OK_RATE_SET						"203 OK RATE SET" NEWLINE
