@@ -112,7 +112,7 @@ typedef struct {
 
 typedef struct {
 	int fd;			/* File descriptor the module is on. */
-	guint fd_source; 	/* Used to store the GSource ID for watching fd activity in the main loop */
+	GSource *source; 	/* Used to store the GSource ID for watching fd activity in the main loop */
 	char *output_module; 	/* Output module name. (e.g. "festival", "flite", "apollo", ...) */
 } TAudioFDSetElement;
 

@@ -59,15 +59,24 @@ static int spd_audio_log_level;
 static lt_dlhandle lt_h;
 
 /* Server audio socket file descriptor */
-int audio_server_socket;
+static int audio_server_socket;
 
 AudioID *audio_id;
 static char *audio_pars[10];	/* Audio module parameters */
 
-static pthread_t audio_thread;
-static sem_t audio_play_semaphore;
-
+/* Audio thread mainloop */
+static GMainContext* audio_thread_context = NULL;
+static GMainLoop* audio_thread_loop = NULL;
+static GSource* audio_socket_source = NULL;
+static GSource* audio_thread_idle_source = NULL;
 static gboolean audio_close_requested = FALSE;
+
+/* A linked list of TAudioFDSetElement structures for modules */
+static GQueue *module_data_list;
+
+static void free_fd_set(gpointer data);
+static void speechd_audio_cleanup(void);
+static void set_audio_thread_attributes();
 
 /* Dynamically load a library with RTLD_GLOBAL set.
 
@@ -455,12 +464,11 @@ int play_audio(int fd)
 	return 0;
 }
 
-static gboolean audio_socket_process_incoming(gint fd,
-					      GIOCondition condition,
-					      gpointer data)
+static gboolean audio_socket_process_incoming(gpointer data)
 {
 	int ret;
-	ret = speechd_audio_connection_new(fd);
+
+	ret = speechd_audio_connection_new(audio_server_socket);
 	if (ret != 0) {
 		MSG(2, "Error: Failed to add new module audio!");
 		if (SPEECHD_DEBUG) {
@@ -471,32 +479,48 @@ static gboolean audio_socket_process_incoming(gint fd,
 	return TRUE;
 }
 
-static gboolean audio_process_incoming(gint fd,
-				       GIOCondition condition, gpointer data)
+static gboolean audio_process_incoming(gpointer data)
 {
-	MSG(5, "audio_process_incoming called for fd %d", fd);
+	TAudioFDSetElement *fd_set = (TAudioFDSetElement *)data;
+
+	MSG(5, "audio_process_incoming called for fd %d", fd_set->fd);
 	int nread;
 
-	ioctl(fd, FIONREAD, &nread);
+	ioctl(fd_set->fd, FIONREAD, &nread);
 
 	if (nread == 0) {
 		/* module has gone */
 		MSG(2, "Info: Module has gone.");
+		g_queue_remove(module_data_list, fd_set);
+		free_fd_set(fd_set);
 		return FALSE;
 	}
 
-	MSG(5, "read %d bytes from fd %d", nread, fd);
+	MSG(5, "read %d bytes from fd %d", nread, fd_set->fd);
 
 	/* client sends some commands or data */
-	if (play_audio(fd) == -1) {
-		MSG(2, "Error: Failed to serve client on fd %d!", fd);
+	if (play_audio(fd_set->fd) == -1) {
+		MSG(2, "Error: Failed to serve client on fd %d!", fd_set->fd);
 	}
 
 	return TRUE;
 }
 
+static gboolean check_close_requested (gpointer data)
+{
+	pthread_mutex_lock(&audio_close_mutex);
+	if (audio_close_requested) {
+		pthread_mutex_unlock(&audio_close_mutex);
+		g_main_loop_quit(audio_thread_loop);
+		return FALSE;
+	}
+
+	pthread_mutex_unlock(&audio_close_mutex);
+	return TRUE;
+}
+
 /* Playback thread. */
-static void *_speechd_play(void *nothing)
+void *_speechd_play(void *nothing)
 {
 	char *error = 0;
 	gchar **outputs;
@@ -504,6 +528,8 @@ static void *_speechd_play(void *nothing)
 	gboolean found_audio_module = FALSE;
 
 	MSG(1, "Playback thread starting.......");
+
+	module_data_list = g_queue_new();
 
 	/* TODO: Use real values from config rather than these hard coded test values */
 	if (GlobalFDSet.audio_oss_device != NULL)
@@ -526,7 +552,7 @@ static void *_speechd_play(void *nothing)
 	else
 		audio_pars[4] = NULL;
 
-	if (GlobalFDSet.audio_pulse_min_length != NULL)
+	if (GlobalFDSet.audio_pulse_min_length > 9)
 		audio_pars[5] =
 		    g_strdup_printf("%d", GlobalFDSet.audio_pulse_min_length);
 	else
@@ -569,37 +595,49 @@ static void *_speechd_play(void *nothing)
 		g_free(error);	/* g_malloc'ed, in spd_audio_open. */
 	}
 
-	/* Connect to the server socket */
-	g_unix_fd_add(audio_server_socket, G_IO_IN,
-		      audio_socket_process_incoming, NULL);
+	/* Create the audio thread main context and loop */
+	audio_thread_context = g_main_context_new();
+	audio_thread_loop = g_main_loop_new(audio_thread_context, FALSE);
+
+	audio_socket_source = g_unix_fd_source_new(audio_server_socket,
+				                   G_IO_IN);
+	g_source_set_callback(audio_socket_source,
+			      audio_socket_process_incoming,
+			      NULL, NULL);
+	g_source_attach(audio_socket_source, audio_thread_context);
+
+	audio_thread_idle_source = g_idle_source_new();
+	g_source_set_callback(audio_thread_idle_source, check_close_requested, NULL, NULL);
+	g_source_attach(audio_thread_idle_source, audio_thread_context);
 
 	/* Block all signals to this thread. */
-//      set_speaking_thread_parameters();
+	set_audio_thread_attributes();
 
-	while (!audio_close_requested) {
-		/* If semaphore not set, set suspended lock and suspend until it is signaled. */
-		if (0 != sem_trywait(&audio_play_semaphore)) {
-			sem_wait(&audio_play_semaphore);
-		}
-		MSG(5, "Playback semaphore on.");
-		if (audio_close_requested)
-			break;
-	}
+	g_main_loop_run(audio_thread_loop);
+
+	MSG(1, "Playback thread stopping.");
+
+	speechd_audio_cleanup();
+
+	g_source_destroy(audio_socket_source);
+	g_source_unref(audio_socket_source);
+	audio_socket_source = NULL;
+
+	g_source_destroy(audio_thread_idle_source);
+	g_source_unref(audio_thread_idle_source);
+	audio_thread_idle_source = NULL;
+
+	/*
+	 * Close the module descriptors, destroy sources, and free the fd_set
+	 * structure.
+	 */
+	g_queue_free_full(module_data_list, free_fd_set);
+
+	g_main_loop_unref(audio_thread_loop);
+	g_main_context_unref(audio_thread_context);
 
 	MSG(1, "Playback thread ended.......");
 	return 0;
-}
-
-void speechd_audio_init()
-{
-	int ret = 0;
-
-	audio_id = 0;
-	sem_init(&audio_play_semaphore, 0, 0);
-
-	ret = pthread_create(&audio_thread, NULL, _speechd_play, NULL);
-	if (ret != 0)
-		FATAL("Audio thread failed!\n");
 }
 
 /* activity is on audio_server_socket (request for a new connection) */
@@ -635,14 +673,19 @@ int speechd_audio_connection_new(int audio_server_socket)
 			SpeechdStatus.max_fd--;
 		return -1;
 	}
+
 	new_fd_set->fd = module_socket;
-	new_fd_set->fd_source =
-	    g_unix_fd_add(module_socket, G_IO_IN, audio_process_incoming, NULL);
+	new_fd_set->source = g_unix_fd_source_new(module_socket, G_IO_IN);
+	g_source_set_callback(new_fd_set->source,
+			      audio_process_incoming,
+			      new_fd_set, NULL);
+	g_source_attach(new_fd_set->source, audio_thread_context);
+	g_queue_push_tail(module_data_list, new_fd_set);
 
 	return 0;
 }
 
-void speechd_audio_cleanup(void)
+static void speechd_audio_cleanup(void)
 {
 	if (close(audio_server_socket) == -1)
 		MSG(2, "close() audio server socket failed: %s",
@@ -651,4 +694,51 @@ void speechd_audio_cleanup(void)
 	MSG(2, "Closing audio output...");
 	spd_audio_close(audio_id);
 	audio_id = NULL;
+}
+
+/*
+ * This is currently the same as the similarly named function in speaking.c
+ * but we have no need to pull in everything else from speaking.h, and there
+ * may be a reason to change this function at a later date.
+ */
+static void set_audio_thread_attributes()
+{
+	int ret;
+	sigset_t all_signals;
+
+	ret = sigfillset(&all_signals);
+	if (ret == 0) {
+		ret = pthread_sigmask(SIG_BLOCK, &all_signals, NULL);
+		if (ret != 0)
+			MSG(1,
+			    "Can't set signal set, expect problems when terminating!");
+	} else {
+		MSG(1,
+		    "Can't fill signal set, expect problems when terminating!");
+	}
+
+	pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
+}
+
+static void free_fd_set(gpointer data)
+{
+	TAudioFDSetElement *fd_set = (TAudioFDSetElement *)data;
+
+	if (fd_set != NULL) {
+		close(fd_set->fd);
+		if (fd_set->output_module != NULL)
+			g_free(fd_set->output_module);
+		if (fd_set->source != NULL) {
+			g_source_destroy(fd_set->source);
+			g_source_unref(fd_set->source);
+		}
+		g_free(fd_set);
+	}
+}
+
+void close_audio_thread(void)
+{
+	pthread_mutex_lock(&audio_close_mutex);
+	audio_close_requested = TRUE;
+	pthread_mutex_unlock(&audio_close_mutex);
 }

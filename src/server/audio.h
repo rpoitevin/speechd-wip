@@ -26,8 +26,14 @@
 #define __SPD_AUDIO_H
 
 #include <spd_audio_plugin.h>
+#include <pthread.h>
+#include <glib.h>
 
 #define SPD_AUDIO_LIB_PREFIX "spd_"
+
+/* audio thread */
+pthread_t audio_thread;
+pthread_mutex_t audio_close_mutex;
 
 AudioID *spd_audio_open(char *name, void **pars, char **error);
 
@@ -51,10 +57,10 @@ int speechd_play_audio(int fd);
 int speechd_audio_connection_new(int audio_socket);
 /* Initialize the audio socket */
 void speechd_audio_socket_init(void);
-/* Initialize the audio backend based on user's settings in a new thread */
-void speechd_audio_init(void);
 
-/* Clean up audio socket and module */
-void speechd_audio_cleanup(void);
+/* Initialize the audio backend based on user's settings in a new thread */
+void *_speechd_play(void *nothing);
+
+void close_audio_thread(void);
 
 #endif /* ifndef #__SPD_AUDIO_H */

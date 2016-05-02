@@ -78,10 +78,6 @@ static gboolean client_process_incoming (gint          fd,
 				  GIOCondition  condition,
 				  gpointer      data);
 
-static gboolean audio_process_incoming (gint           fd,
-				  GIOCondition  condition,
-				  gpointer      data);
-
 void check_client_count(void);
 
 #ifdef __SUNPRO_C
@@ -646,6 +642,10 @@ void speechd_init()
 	if (ret != 0)
 		DIE("Mutex initialization failed");
 
+	ret = pthread_mutex_init(&audio_close_mutex, NULL);
+	if (ret != 0)
+		DIE("Mutex initialization failed");
+
 	if (SpeechdOptions.log_dir == NULL) {
 		SpeechdOptions.log_dir =
 		    g_strdup_printf("%s/log/",
@@ -990,7 +990,6 @@ int main(int argc, char *argv[])
 	char *spawn_communication_method = NULL;
 	int spawn_port = 0;
 	char *spawn_socket_path = NULL;
-	char *status_info;
 
 	/* Strip all permisions for 'others' from the files created */
 	umask(007);
@@ -1131,9 +1130,9 @@ int main(int argc, char *argv[])
 
 	/* We need this first since modules will connect to it */
 	speechd_audio_socket_init();
-	
+
 	speechd_init();
-	
+
 	/* Handle socket_path 'default' */
 	// TODO: This is a hack, we should do that at appropriate places...
 	if (!strcmp(SpeechdOptions.socket_path, "default")) {
@@ -1253,8 +1252,11 @@ int main(int argc, char *argv[])
 	g_unix_signal_add(SIGUSR1, speechd_reload_dead_modules, NULL);
 	(void)signal(SIGPIPE, SIG_IGN);
 
-	speechd_audio_init();
-	
+	MSG(4, "Creating new thread for audio playback");
+	ret = pthread_create(&audio_thread, NULL, _speechd_play, NULL);
+	if (ret != 0)
+		FATAL("Audio thread failed!\n");
+
 	MSG(4, "Creating new thread for speak()");
 	ret = pthread_create(&speak_thread, NULL, speak, NULL);
 	if (ret != 0)
@@ -1298,8 +1300,13 @@ int main(int argc, char *argv[])
 	if (close(server_socket) == -1)
 		MSG(2, "close() failed: %s", strerror(errno));
 
-	speechd_audio_cleanup();
-	
+	/* Signal the audio thread to terminate. */
+	close_audio_thread();
+
+	ret = pthread_join(audio_thread, NULL);
+	if (ret != 0)
+		FATAL("Audio thread failed to join!\n");
+
 	MSG(4, "Removing pid file");
 	destroy_pid_file();
 
