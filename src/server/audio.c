@@ -659,9 +659,6 @@ int speechd_audio_connection_new(int audio_server_socket)
 		return -1;
 	}
 
-	/* We add the associated client_socket to the descriptor set. */
-	if (module_socket > SpeechdStatus.max_fd)
-		SpeechdStatus.max_fd = module_socket;
 	MSG(4, "Adding module on fd %d", module_socket);
 
 	/* Create a record in fd_settings */
@@ -669,8 +666,6 @@ int speechd_audio_connection_new(int audio_server_socket)
 	if (new_fd_set == NULL) {
 		MSG(2,
 		    "Error: Failed to create a record in fd_settings for the module for audio");
-		if (SpeechdStatus.max_fd == module_socket)
-			SpeechdStatus.max_fd--;
 		return -1;
 	}
 
