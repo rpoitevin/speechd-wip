@@ -10,3 +10,6 @@ The below listed branches are being worked on. Once the functionality in a branc
 
 # Contributions
 Contributions are welcome. Feel free to submit contributions either in the form of github merge requests, and patches/pull requests on the [Speech Dispatcher mailing list](http://lists.freebsoft.org/mailman/listinfo/speechd). It is assumed that your github merge requests are against this repository. If posting to the mailing list, please clearly indicate which repository your request or patch is for.
+
+Discussion about the above branches is encouraged, and should happen on the mailing list. Once a branch is considered as functionally complete, the patches from the branch in question will be posted to
+the mailing list, for final community review. Hopefully all the bigger bugs and gotchas will be dealt with already, but should something be missed, this will be another chance to fix it, before the functionality makes it into master.
