@@ -479,9 +479,9 @@ static gboolean audio_socket_process_incoming(gpointer data)
 	return TRUE;
 }
 
-static gboolean audio_process_incoming(int      fd,
-				       gpointer null, 
-                                       gpointer user_data)
+static gboolean audio_process_incoming(int          fd,
+                                       GIOCondition condition,
+                                       gpointer     user_data)
 {
 	TAudioFDSetElement *fd_set = (TAudioFDSetElement *)user_data;
 
@@ -674,7 +674,7 @@ int speechd_audio_connection_new(int audio_server_socket)
 	new_fd_set->fd = module_socket;
 	new_fd_set->source = g_unix_fd_source_new(module_socket, G_IO_IN);
 	g_source_set_callback(new_fd_set->source,
-			      (GSourceFunc)audio_process_incoming,
+			      (GUnixFDSourceFunc)audio_process_incoming,
 			      new_fd_set, NULL);
 	g_source_attach(new_fd_set->source, audio_thread_context);
 	g_queue_push_tail(module_data_list, new_fd_set);
