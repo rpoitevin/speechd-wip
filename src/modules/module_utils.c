@@ -934,7 +934,7 @@ int module_audio_init(char **status_info)
 		return -1;
 	}
 
-	str = g_strdup("ACK"NEWLINE);
+	str = g_strdup(SPD_ACK NEWLINE);
 	if (send(audio_socket, str, strlen(str), 0) == -1) {
 		g_free (str);
 		*status_info =
@@ -944,6 +944,17 @@ int module_audio_init(char **status_info)
 	}
 	g_free(str);
 
+	return 0;
+}
+
+int module_audio_stop(void)
+{
+	/* Send stop command */
+	char *cmd = g_strdup_printf(SPD_STOP NEWLINE);
+	if (send(audio_socket, cmd, strlen(cmd), 0) == -1) {
+		DBG("Can't send stop audio command for some reason.");
+		return -1;
+	}
 	return 0;
 }
 

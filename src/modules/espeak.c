@@ -451,6 +451,7 @@ int module_stop(void)
 	    !is_thread_busy(&espeak_stop_or_pause_suspended_mutex)) {
 		DBG(DBG_MODNAME " stopping...");
 		espeak_stop_requested = TRUE;
+		module_audio_stop();
 		/* Wake the stop_or_pause thread. */
 		sem_post(&espeak_stop_or_pause_semaphore);
 	} else {

@@ -267,8 +267,10 @@ static int pulse_play(AudioID * id, AudioTrack track)
 /* stop the pulse_play() loop */
 static int pulse_stop(AudioID * id)
 {
+    MSG(5, "pulse_stop called");
 	spd_pulse_id_t *pulse_id = (spd_pulse_id_t *) id;
 
+	pa_simple_flush (pulse_id->pa_simple, NULL);
 	pulse_id->pa_stop_playback = 1;
 	return 0;
 }

@@ -431,10 +431,7 @@ int module_stop(void)
 		if (!festival_stop) {
 			pthread_mutex_lock(&sound_output_mutex);
 			festival_stop = 1;
-			// TODO: Add a way for modules to request speech stop maybe ?
-// 			if (festival_speaking && module_audio_id) {
-// 				spd_audio_stop(module_audio_id);
-// 			}
+			module_audio_stop();
 			pthread_mutex_unlock(&sound_output_mutex);
 		}
 	}

@@ -416,10 +416,17 @@ int play_audio(int fd)
 
 	/* Parse the data and read the reply */
 	MSG2(5, "protocol", "%d:DATA:|%s| (%d)", fd, buf, bytes);
-	if (strcmp(buf, "ACK" NEWLINE) == 0) {
+	if (strcmp(buf, SPD_ACK NEWLINE) == 0) {
 		g_free(buf);
 		return 0;
 	}
+
+	if (strcmp(buf, SPD_STOP NEWLINE) == 0) {
+        MSG(5, "Stopping audio...");
+		spd_audio_stop(audio_id);
+		return 0;
+	}
+
 	/* parse the AudioTrack information from buf */
 	metadata = g_strsplit(buf, ":", 5);
 	if (metadata == NULL || metadata[0] == NULL

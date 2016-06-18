@@ -33,4 +33,7 @@
 #define SPD_OUTPUT_MODULE	"OUTPUT_MODULE"
 #define SPD_SYNTHESIS_VOICE	"SYNTHESIS_VOICE"
 
+#define SPD_ACK			"ACK"
+#define SPD_STOP		"STOP"
+
 #endif /* not ifndef SPEECHD_DEFINES_H */
