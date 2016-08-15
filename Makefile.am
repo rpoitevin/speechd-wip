@@ -1,4 +1,7 @@
 ## Process this file with automake to produce Makefile.in
+gsettings_SCHEMAS = data/org.speech-dispatcher.gschema.xml
+@GSETTINGS_RULES@
+
 
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = speech-dispatcher.pc

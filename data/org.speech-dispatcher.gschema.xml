@@ -1,0 +1,374 @@
+<?xml version="1.0" encoding="utf-8"?>
+<schemalist>
+  <!-- Note: Keep these enumerations in sync with those in speechd_types.h -->
+
+  <enum id="org.speech-dispatcher.communication-method">
+    <value nick="unix_socket" value="0" />
+    <value nick="inet_socket" value="1" />
+  </enum>
+
+  <enum id="org.speech-dispatcher.voice-type">
+    <value nick="male1" value="1" />
+    <value nick="male2" value="2" />
+    <value nick="male3" value="3" />
+    <value nick="female1" value="4" />
+    <value nick="female2" value="5" />
+    <value nick="female3" value="6" />
+    <value nick="child_male" value="7" />
+    <value nick="child_female" value="8" />
+  </enum>
+
+  <enum id="org.speech-dispatcher.priority">
+    <value nick="important" value="1" />
+    <value nick="message" value="2" />
+    <value nick="text" value="3" />
+    <value nick="notification" value="4" />
+    <value nick="progress" value="5" />
+  </enum>
+
+  <enum id="org.speech-dispatcher.punctuation">
+    <value nick="all" value="0" />
+    <value nick="none" value="1" />
+    <value nick="some" value="2" />
+  </enum>
+
+  <enum id="org.speech-dispatcher.capital-letters">
+    <value nick="none" value="0" />
+    <value nick="spell" value="1" />
+    <value nick="icon" value="2" />
+  </enum>
+
+  <schema path="/org/speech-dispatcher/" id="org.speech-dispatcher">
+
+    <!-- System Options -->
+
+    <key name='communication-method' enum='org.speech-dispatcher.communication-method'>
+      <summary>Communication Method</summary>
+      <description>
+        The method used by speech-dispatcher to communicate with it's clients.
+        unix_socket -- communication over Unix sockets represented by a file in the
+        filesystem (see SocketPath below). This method works only locally, but is
+        prefered for standard session setup, where every user runs his own instance of Speech
+        Dispatcher to get voice feedback on his own computer.
+        
+        inet_socket -- alternatively, you can start Speech Dispatcher on
+        a TCP port and connect to it via hostname/port. This allows for a more
+        flexible setup, where you can use Speech Dispatcher over network
+        from different machines. See also the Port and LocalhostAccessOnly
+        configuration variables.
+      </description>
+      <default>'unix_socket'</default>
+    </key>
+
+    <key name='socket-path' type='s'>
+      <summary>Path for unix socket to use or 'default'</summary>
+      <description>
+        Socket Path is either "default" or a full path to the filesystem
+        where the driving Unix socket file should be created in case the
+        CommunicationMethod is set to "unix_socket". The default is
+        $XDG_RUNTIME_DIR/speech-dispatcher/speechd.sock where $XDG_RUNTIME_DIR
+        is the directory specified by the XDG Base Directory Specification.
+        Do not change this unless you have a reason and know what you are doing.
+      </description>
+      <default>'default'</default>
+    </key>
+
+    <key name='port' type='i'>
+      <summary>Port for inet socket communication</summary>
+      <description>
+        The Port on which Speech Dispatcher should be available to clients if the "inet_socket"
+         communication method is used.
+      </description>
+      <default>6560</default>
+    </key>
+
+    <key name='localhost-access-only' type='b'>
+      <summary>Minutes to seconds separator</summary>
+      <description>
+        By default, if "inet_socket" communication method is used, the specified port is opened only
+        for connections coming from localhost. If localhost-access-only set to false it disables this
+        access control. It means that the port will be accessible from all computers on the
+        network. If you turn off this option, please make sure you set up some system rules on what
+        computers are and are not allowed to access the Speech Dispatcher port.
+      </description>
+      <default>true</default>
+    </key>
+
+    <key name="timeout" type="u">
+      <summary>Timeout</summary>
+      <description>
+        By default, Speech Dispatcher is configured to shut itself down after a period of
+        time if no clients are connected. The timeout value is in seconds, and is started when
+        the last client disconnects. A value of 0 disables the timeout.
+      </description>
+      <default>100</default>
+    </key>
+
+    <!-- Logging Options -->
+
+    <key name="log-level" type="u">
+      <summary>Log Level</summary>
+      <description>
+        The Log Level is a number between 0 and 5 specifying the
+        verbosity of information to the logfile  or screen
+        0 means nothing, 5 means everything (not recommended).
+      </description>
+      <range min="0" max="5"/>
+      <default>3</default>
+    </key>
+
+    <key name="log-dir" type="s">
+      <summary>Log Dir</summary>
+      <description>
+        The Log Dir specifies where the Speech Dispatcher logs reside
+        Specify "stdout" for standard console output
+        or a custom log directory path. 'default' means
+        the logs are written to the default destination (e.g. a preconfigured
+        system directory or the home directory if .speech-dispatcher is present)
+        DO NOT COMMENT OUT THIS OPTION, leave as "default" for standard logging
+      </description>
+      <default>'default'</default>
+    </key>
+
+    <key name="custom-log-file" type="a{ss}">
+      <summary>Custom Log File</summary>
+      <description>
+        The Custom Log File allows logging all messages # regardless of
+        priority, to the given destination.
+      </description>
+      <default>{}</default>
+    </key>
+
+    <!-- Voice parameters -->
+    
+    <key name="default-rate" type="i">
+      <summary>Default Rate</summary>
+      <description>
+        The Default Rate controls how fast the synthesizer is going to speak.
+        The value must be between -100 (slowest) and +100 (fastest), default
+        is 0.
+      </description>
+      <range min="-100" max="100"/>
+      <default>0</default>
+    </key>
+
+    <key name="default-pitch" type="i">
+      <summary>Default Pitch</summary>
+      <description>
+        The Default Pitch controls the pitch of the synthesized voice.  The
+        value must be between -100 (lowest) and +100 (highest), default is
+        0.
+      </description>
+      <range min="-100" max="100"/>
+      <default>0</default>
+    </key>
+
+    <key name="default-pitch-range" type="i">
+      <summary>Default Pitch Range</summary>
+      <description>
+        The Default Pitch Range controls the pitch range of the synthesized voice.  The
+        value must be between -100 (lowest) and +100 (highest), default is 0.
+      </description>
+      <range min="-100" max="100"/>
+      <default>0</default>
+    </key>
+
+    <key name="default-volume" type="i">
+      <summary>Default Volume</summary>
+      <description>
+        The Default Volume controls the default volume of the voice.  It is
+        a value between -100 (softly) and +100 (loudly).  Currently, +100
+        maps to the default volume of the synthesizer.
+      </description>
+      <range min="-100" max="100"/>
+      <default>0</default>
+    </key>
+
+    <key name="default-voice-type" enum="org.speech-dispatcher.voice-type">
+      <summary>Default Voice Type</summary>
+      <description>
+        The Default Voice Type controls which voice type should be used by
+        default.  Voice types are symbolic names which map to particular
+        voices provided by the synthesizer according to the output module
+        configuration.  Please see the synthesizer-specific configuration
+        in etc/speech-dispatcher/modules/ to see which voices are assigned to
+        different symbolic names.  The following symbolic names are
+        currently supported: MALE1, MALE2, MALE3, FEMALE1, FEMALE2, FEMALE3,
+        CHILD_MALE, CHILD_FEMALE
+      </description>
+      <default>'male1'</default>
+    </key>
+
+    <key name="default-language" type="s">
+      <summary>Default Language</summary>
+      <description>The Default language with which to speak</description>
+      <default>'en'</default>
+    </key>
+
+    <!-- Message Dispatching Control -->
+
+    <key name="default-client-name" type="s">
+      <summary>Default Client Name</summary>
+      <description>
+        The Default Client Name specifies the name of a client who didn't
+        introduce himself at the beginning of an SSIP session.
+      </description>
+      <default>'unknown:unknown:unknown'</default>
+    </key>
+
+    <key name="default-priority" enum="org.speech-dispatcher.priority">
+      <summary>Default Priority</summary>
+      <description>
+        The Default Priority. Use with caution, normally this shouldn't be
+        changed globally (at this place)
+      </description>
+      <default>'text'</default>
+    </key>
+
+    <key name="default-pause-context" type="u">
+      <summary>Default Pause Context</summary>
+      <description>
+        The Default Pause Context specifies by how many index marks a speech
+        cursor should return when resuming after a pause. This is roughly
+        equivalent to the number of sentences before the place of the
+        execution of pause that will be repeated.
+      </description>
+      <default>0</default>
+    </key>
+
+    <!-- Spelling/Punctuation/Capital Letters Configuration -->
+
+    <key name="default-punctuation-mode" enum="org.speech-dispatcher.punctuation">
+      <summary>Default Punctuation Mode</summary>
+      <description>
+        The Default Punctuation Mode sets the way dots, commas, exclamation
+        marks, question marks etc. are interpreted.  none: they are ignored
+        some: some of them are sent to synthesis (see
+        DefaultPunctuationSome) all: all punctuation marks are sent to
+        synthesis
+      </description>
+      <default>'none'</default>
+    </key>
+
+    <key name="default-capital-letter-recognition" enum="org.speech-dispatcher.capital-letters">
+      <summary>Default Capital Letter Recognition</summary>
+      <description>
+        The Default Capital Letter Recognition: if set to "spell", capital letters
+        should be spelled (e.g. "capital b"), if set to "icon",
+        capital letters are indicated by inserting a special sound
+        before them but they should be read normally, it set to "none"
+        capital letters are not recognized (by default)
+      </description>
+      <default>'none'</default>
+    </key>
+
+    <key name="default-spelling" type="b">
+      <summary>Default Spelling</summary>
+      <description>
+        The Default Spelling: if set to true, all messages will be spelled
+        unless set otherwise (this is usually not something you want to do.)
+      </description>
+      <default>false</default>
+    </key>
+
+    <!-- Audio Options -->
+
+    <key name="audio-output-method" type="s">
+      <summary>Audio Output Method</summary>
+      <description>
+        Chooses between the possible sound output systems:
+              "pulse" - PulseAudio
+              "alsa"  - Advanced Linux Sound System
+              "oss"   - Open Sound System
+              "nas"   - Network Audio System
+              "libao" - A cross platform audio library
+        Pulse audio is the default and recommended sound server. OSS and ALSA
+        are only provided for compatibility with architectures that do not
+        include Pulse Audio. NAS provides network transparency, but is not
+        very well tested. libao is a cross platform library with plugins for
+        different sound systems and provides alternative output for Pulse Audio
+        and ALSA as well as for other backends.
+      </description>
+      <default>'pulse'</default>
+    </key>
+
+    <!-- Pulse Audio Options -->
+
+    <key name="audio-pulse-server" type="s">
+      <summary>Audio Pulse Server</summary>
+      <description>
+        Pulse audio server name or "default" for the default pulse server
+      </description>
+      <default>'default'</default>
+    </key>
+
+    <key name="audio-pulse-min-length" type="u">
+      <summary>Audio Pulse Min Length</summary>
+      <description>
+        Minimum length of pulse audio packets.
+      </description>
+      <default>100</default>
+    </key>
+
+    <!-- ALSA Audio Options -->
+
+    <key name="audio-alsa-device" type="s">
+      <summary>Audio ALSA Device</summary>
+      <description>Audio device for ALSA output</description>
+      <default>'default'</default>
+    </key>
+
+    <!-- OSS Audio Options -->
+
+    <key name="audio-oss-device" type="s">
+      <summary>Audio OSS Device</summary>
+      <description>Audio device for OSS output</description>
+      <default>'/dev/dsp'</default>
+    </key>
+
+    <!-- NAS Audio Options -->
+
+    <key name="audio-nas-server" type="s">
+      <summary>Audio NAS Server</summary>
+      <description>
+        Route to the Network Audio System server when NAS
+        is chosen for the audio output. Note that NAS
+        server doesn't need to run on your machine,
+        you can use it also over network (for instance
+        when working on remote machines).
+      </description>
+      <default>'tcp/localhost:5450'</default>
+    </key>
+
+    <!-- Output Modules Options -->
+
+    <key name="enabled-modules" type="as">
+      <summary>Enabled Output Modules</summary>
+      <description>
+        This is the list of all output modules that should be enabled.
+        Each is a string separated by colons of the name:module-binary:config-file
+        such as 'espeak:sd_espeak:espeak.conf' and 'swift-generic:sd_generic:swift-generic.conf'
+      </description>
+      <default>['espeak:sd_espeak:espeak.conf', 'festival:sd_festival:festival.conf', 'pico:sd_pico:pico.conf']</default>
+    </key>
+
+    <key name="default-module" type="s">
+      <summary>Default Module</summary>
+      <description>
+        The Default Module selects which output module is the default.  You
+        must use one of the names of the modules from the enabled-modules setting.
+      </description>
+      <default>'espeak'</default>
+    </key>
+
+    <key name="language-default-module" type="a{ss}">
+      <summary>Language Default Module</summary>
+      <description>
+        The Language Default Module selects which output modules are prefered
+        for specified languages.
+      </description>
+      <default>{'en': 'espeak', 'cs': 'festival', 'es': 'festival'}</default>
+    </key>
+
+  </schema>
+</schemalist>
