@@ -7,6 +7,7 @@ The master Speech Dispatcher development git repository can be found at [git.fre
 The below listed branches are being worked on. Once the functionality in a branch is considered complete, it will be merged into the master git repository, removed from this list, and deleted from this repository.
 
 * [wip/audio-in-server](https://github.com/TheMuso/speechd-wip/tree/wip/audio-in-server)
+* [wip/gsettings-migration](https://github.com/TheMuso/speechd-wip/tree/wip/gsettings-migration)
 
 # Contributions
 Contributions are welcome. Feel free to submit contributions either in the form of github merge requests, and patches/pull requests on the [Speech Dispatcher mailing list](http://lists.freebsoft.org/mailman/listinfo/speechd). It is assumed that your github merge requests are against this repository. If posting to the mailing list, please clearly indicate which repository your request or patch is for.
