@@ -674,7 +674,6 @@ void speechd_init()
 
 static gboolean speechd_load_configuration(gpointer user_data)
 {
-	configfile_t *configfile = NULL;
 	GList *detected_modules = NULL;
 
 	/* Clean previous configuration */
@@ -690,50 +689,25 @@ static gboolean speechd_load_configuration(gpointer user_data)
 	/* Load new configuration */
 	load_default_global_set_options();
 
-	spd_num_options = 0;
-	spd_options = load_config_options(&spd_num_options);
-
-	/* Add the LAST option */
-	spd_options = add_config_option(spd_options, &spd_num_options, "", 0,
-					NULL, NULL, 0);
-
-	configfile =
-	    dotconf_create(SpeechdOptions.conf_file, spd_options, 0,
-			   CASE_INSENSITIVE);
-	if (configfile) {
-		configfile->includepath = g_strdup(SpeechdOptions.conf_dir);
-		MSG(5, "Config file include path is: %s",
-		    configfile->includepath);
-		if (dotconf_command_loop(configfile) == 0)
-			DIE("Error reading config file\n");
-		dotconf_cleanup(configfile);
-		MSG(2, "Configuration has been read from \"%s\"",
-		    SpeechdOptions.conf_file);
-
-		/* We need to load modules here, since this is called both by speechd_init
-		 * and to handle SIGHUP. */
-		if (module_number_of_requested_modules() < 2) {
-			detected_modules = detect_output_modules(SpeechdOptions.module_dir);
-			while (detected_modules != NULL) {
-				char **parameters = detected_modules->data;
-				module_add_load_request(parameters[0],
-							parameters[1],
-							parameters[2],
-							parameters[3]);
-				g_free(detected_modules->data);
-				detected_modules->data = NULL;
-				detected_modules =
-				    g_list_delete_link(detected_modules,
-						       detected_modules);
-			}
+	/* We need to load modules here, since this is called both by speechd_init
+	 * and to handle SIGHUP. */
+	if (module_number_of_requested_modules() < 2) {
+		detected_modules = detect_output_modules(SpeechdOptions.module_dir);
+		while (detected_modules != NULL) {
+			char **parameters = detected_modules->data;
+			module_add_load_request(parameters[0],
+						parameters[1],
+						parameters[2],
+						parameters[3]);
+			g_free(detected_modules->data);
+			detected_modules->data = NULL;
+			detected_modules =
+				g_list_delete_link(detected_modules,
+						   detected_modules);
 		}
-
-		module_load_requested_modules();
-	} else {
-		MSG(1, "Can't open %s", SpeechdOptions.conf_file);
 	}
 
-	free_config_options(spd_options, &spd_num_options);
+	module_load_requested_modules();
 
 	return TRUE;
 }

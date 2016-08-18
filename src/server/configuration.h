@@ -26,20 +26,9 @@
 #define CONFIG_H
 
 #include <stdlib.h>
-#include <dotconf.h>
+#include <gio/gio.h>
 
-#define SPEECHD_DEFAULT_PORT 6560
-
-/* Loading options from DotConf */
-configoption_t *spd_options;
-int spd_num_options;
-
-configoption_t *load_config_options(int *num_options);
-void free_config_options(configoption_t * opts, int *num);
-configoption_t *add_config_option(configoption_t * options,
-				  int *num_config_options, char *name, int type,
-				  dotconf_callback_t callback, info_t * info,
-				  unsigned long context);
+GSettings *spd_settings;
 
 void load_default_global_set_options();
 
