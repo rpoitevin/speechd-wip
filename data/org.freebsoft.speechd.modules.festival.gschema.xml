@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <schemalist>
 
-  <schema path='/org/speech-dispatcher/modules/festival/' id='org.speech-dispatcher.modules.festival'>
+  <schema path='/org/freebsoft/speechd/modules/festival/' id='org.freebsoft.speechd.modules.festival'>
 
     <!-- FESTIVAL SERVER SETTINGS -->
 

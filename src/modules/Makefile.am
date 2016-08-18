@@ -12,9 +12,9 @@ AM_CPPFLAGS = $(inc_local) -DDATADIR=\"$(snddatadir)\" -D_GNU_SOURCE \
 	$(ibmtts_include) $(SNDFILE_CFLAGS)
 
 modulebin_PROGRAMS = sd_dummy sd_generic sd_festival sd_cicero
-gsettings_SCHEMAS = $(top_srcdir)/data/org.speech-dispatcher.modules.cicero.gschema.xml \
-                     $(top_srcdir)/data/org.speech-dispatcher.modules.festival.gschema.xml \
-                     $(top_srcdir)/data/org.speech-dispatcher.modules.generic.gschema.xml
+gsettings_SCHEMAS = $(top_srcdir)/data/org.freebsoft.speechd.modules.cicero.gschema.xml \
+                     $(top_srcdir)/data/org.freebsoft.speechd.modules.festival.gschema.xml \
+                     $(top_srcdir)/data/org.freebsoft.speechd.modules.generic.gschema.xml
 
 sd_dummy_SOURCES = dummy.c $(audio_SOURCES) $(common_SOURCES) \
 	module_utils_addvoice.c
@@ -42,7 +42,7 @@ sd_cicero_LDADD = $(top_builddir)/src/common/libcommon.la \
 
 if flite_support
 modulebin_PROGRAMS += sd_flite
-gsettings_SCHEMAS += $(top_srcdir)/data/org.speech-dispatcher.modules.flite.gschema.xml
+gsettings_SCHEMAS += $(top_srcdir)/data/org.freebsoft.speechd.modules.flite.gschema.xml
 sd_flite_SOURCES = flite.c $(audio_SOURCES) $(common_SOURCES)
 sd_flite_LDADD = $(top_builddir)/src/common/libcommon.la \
 	$(audio_dlopen_modules) \
@@ -52,7 +52,7 @@ endif
 
 if ibmtts_support
 modulebin_PROGRAMS += sd_ibmtts
-gsettings_SCHEMAS += $(top_srcdir)/data/org.speech-dispatcher.modules.ibmtts.gschema.xml
+gsettings_SCHEMAS += $(top_srcdir)/data/org.freebsoft.speechd.modules.ibmtts.gschema.xml
 sd_ibmtts_SOURCES = ibmtts.c $(audio_SOURCES) $(common_SOURCES) \
 	module_utils_addvoice.c
 sd_ibmtts_LDADD = $(top_builddir)/src/common/libcommon.la \
@@ -63,7 +63,7 @@ endif
 
 if espeak_support
 modulebin_PROGRAMS += sd_espeak
-gsettings_SCHEMAS += $(top_srcdir)/data/org.speech-dispatcher.modules.espeak.gschema.xml
+gsettings_SCHEMAS += $(top_srcdir)/data/org.freebsoft.speechd.modules.espeak.gschema.xml
 sd_espeak_SOURCES = espeak.c $(audio_SOURCES) $(common_SOURCES)
 sd_espeak_LDADD = $(top_builddir)/src/common/libcommon.la \
 	$(audio_dlopen_modules) \
@@ -73,7 +73,7 @@ endif
 
 if espeak_ng_support
 modulebin_PROGRAMS += sd_espeak-ng
-gsettings_SCHEMAS += $(top_srcdir)/data/org.speech-dispatcher.modules.espeak-ng.gschema.xml
+gsettings_SCHEMAS += $(top_srcdir)/data/org.freebsoft.speechd.modules.espeak-ng.gschema.xml
 sd_espeak_ng_SOURCES = espeak.c $(audio_SOURCES) $(common_SOURCES)
 sd_espeak_ng_CFLAGS = -DESPEAK_NG_INCLUDE $(ESPEAK_NG_CFLAGS)
 sd_espeak_ng_LDADD = $(top_builddir)/src/common/libcommon.la \
@@ -84,7 +84,7 @@ endif
 
 if ivona_support
 modulebin_PROGRAMS += sd_ivona
-gsettings_SCHEMAS += $(top_srcdir)/data/org.speech-dispatcher.modules.ivona.gschema.xml
+gsettings_SCHEMAS += $(top_srcdir)/data/org.freebsoft.speechd.modules.ivona.gschema.xml
 sd_ivona_SOURCES = ivona.c ivona_client.c ivona_client.h $(audio_SOURCES) \
 	$(common_SOURCES)
 sd_ivona_LDADD = $(top_builddir)/src/common/libcommon.la \
@@ -95,7 +95,7 @@ endif
 
 if pico_support
 modulebin_PROGRAMS += sd_pico
-gsettings_SCHEMAS += $(top_srcdir)/data/org.speech-dispatcher.modules.pico.gschema.xml
+gsettings_SCHEMAS += $(top_srcdir)/data/org.freebsoft.speechd.modules.pico.gschema.xml
 sd_pico_SOURCES = pico.c $(audio_SOURCES) $(common_SOURCES)
 sd_pico_LDADD = $(top_builddir)/src/common/libcommon.la \
 	$(audio_dlopen_modules) -lttspico \

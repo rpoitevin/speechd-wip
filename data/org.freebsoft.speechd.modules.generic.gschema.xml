@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <schemalist>
-  <schema id='org.speech-dispatcher.modules.generic'>
+  <schema id='org.freebsoft.speechd.modules.generic'>
 
     <key name='execute-synth' type='s'>
       <summary>Execute Synthesizer</summary>

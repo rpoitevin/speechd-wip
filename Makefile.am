@@ -1,5 +1,5 @@
 ## Process this file with automake to produce Makefile.in
-gsettings_SCHEMAS = data/org.speech-dispatcher.gschema.xml
+gsettings_SCHEMAS = data/org.freebsoft.speechd.server.gschema.xml
 @GSETTINGS_RULES@
 
 

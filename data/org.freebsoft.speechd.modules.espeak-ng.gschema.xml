@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <schemalist>
 
-  <schema path='/org/speech-dispatcher/modules/espeak/' id='org.speech-dispatcher.modules.espeak'>
+  <schema path='/org/freebsoft/speechd/modules/espeak-ng/' id='org.freebsoft.speechd.modules.espeak-ng'>
 
     <!-- Sound Icons -->
 

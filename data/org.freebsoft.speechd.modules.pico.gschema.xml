@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <schemalist>
-  <schema path='/org/speech-dispatcher/modules/pico/' id='org.speech-dispatcher.modules.pico'>
+  <schema path='/org/freebsoft/speechd/modules/pico/' id='org.freebsoft.speechd.modules.pico'>
 
     <key name='lingware-path' type='s'>
       <summary>Lingware Path</summary>

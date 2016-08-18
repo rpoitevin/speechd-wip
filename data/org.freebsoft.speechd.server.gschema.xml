@@ -2,12 +2,12 @@
 <schemalist>
   <!-- Note: Keep these enumerations in sync with those in speechd_types.h -->
 
-  <enum id="org.speech-dispatcher.communication-method">
+  <enum id="org.freebsoft.speechd.server.communication-method">
     <value nick="unix_socket" value="0" />
     <value nick="inet_socket" value="1" />
   </enum>
 
-  <enum id="org.speech-dispatcher.voice-type">
+  <enum id="org.freebsoft.speechd.server.voice-type">
     <value nick="male1" value="1" />
     <value nick="male2" value="2" />
     <value nick="male3" value="3" />
@@ -18,7 +18,7 @@
     <value nick="child_female" value="8" />
   </enum>
 
-  <enum id="org.speech-dispatcher.priority">
+  <enum id="org.freebsoft.speechd.server.priority">
     <value nick="important" value="1" />
     <value nick="message" value="2" />
     <value nick="text" value="3" />
@@ -26,23 +26,23 @@
     <value nick="progress" value="5" />
   </enum>
 
-  <enum id="org.speech-dispatcher.punctuation">
+  <enum id="org.freebsoft.speechd.server.punctuation">
     <value nick="all" value="0" />
     <value nick="none" value="1" />
     <value nick="some" value="2" />
   </enum>
 
-  <enum id="org.speech-dispatcher.capital-letters">
+  <enum id="org.freebsoft.speechd.server.capital-letters">
     <value nick="none" value="0" />
     <value nick="spell" value="1" />
     <value nick="icon" value="2" />
   </enum>
 
-  <schema path="/org/speech-dispatcher/" id="org.speech-dispatcher">
+  <schema path="/org/freebsoft/speechd/" id="org.freebsoft.speechd.server">
 
     <!-- System Options -->
 
-    <key name='communication-method' enum='org.speech-dispatcher.communication-method'>
+    <key name='communication-method' enum='org.freebsoft.speechd.server.communication-method'>
       <summary>Communication Method</summary>
       <description>
         The method used by speech-dispatcher to communicate with it's clients.
@@ -184,7 +184,7 @@
       <default>0</default>
     </key>
 
-    <key name="default-voice-type" enum="org.speech-dispatcher.voice-type">
+    <key name="default-voice-type" enum="org.freebsoft.speechd.server.voice-type">
       <summary>Default Voice Type</summary>
       <description>
         The Default Voice Type controls which voice type should be used by
@@ -216,7 +216,7 @@
       <default>'unknown:unknown:unknown'</default>
     </key>
 
-    <key name="default-priority" enum="org.speech-dispatcher.priority">
+    <key name="default-priority" enum="org.freebsoft.speechd.server.priority">
       <summary>Default Priority</summary>
       <description>
         The Default Priority. Use with caution, normally this shouldn't be
@@ -238,7 +238,7 @@
 
     <!-- Spelling/Punctuation/Capital Letters Configuration -->
 
-    <key name="default-punctuation-mode" enum="org.speech-dispatcher.punctuation">
+    <key name="default-punctuation-mode" enum="org.freebsoft.speechd.server.punctuation">
       <summary>Default Punctuation Mode</summary>
       <description>
         The Default Punctuation Mode sets the way dots, commas, exclamation
@@ -250,7 +250,7 @@
       <default>'none'</default>
     </key>
 
-    <key name="default-capital-letter-recognition" enum="org.speech-dispatcher.capital-letters">
+    <key name="default-capital-letter-recognition" enum="org.freebsoft.speechd.server.capital-letters">
       <summary>Default Capital Letter Recognition</summary>
       <description>
         The Default Capital Letter Recognition: if set to "spell", capital letters

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <schemalist>
-  <schema path='/org/speech-dispatcher/modules/ibmtts/' id='org.speech-dispatcher.modules.ibmtts'>
+  <schema path='/org/freebsoft/speechd/modules/ibmtts/' id='org.freebsoft.speechd.modules.ibmtts'>
 
 
     <key name='audio-chunk-size' type='u'>
