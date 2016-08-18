@@ -1,32 +1,25 @@
 ## Process this file with automake to produce Makefile.in
-gsettings_SCHEMAS = data/org.freebsoft.speechd.server.gschema.xml
-@INTLTOOL_XML_NOMERGE_RULE@
-@GSETTINGS_RULES@
-
-
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = speech-dispatcher.pc
 
 BUILT_SOURCES = $(top_srcdir)/.version
 
-SUBDIRS = \
-	include \
-	src \
-	config \
-	doc \
-	po
+SUBDIRS = config \
+          data \
+          doc \
+          include \
+          po \
+          src
 
-EXTRA_DIST = \
-	$(gsettings_SCHEMAS) \
-	ANNOUNCE \
-	BUGS \
-	FAQ \
-	README.packagers \
-	README.translators \
-	README.style \
-	build.sh \
-	git-version-gen \
-	split-version.sh
+EXTRA_DIST = ANNOUNCE \
+             BUGS \
+             FAQ \
+             README.packagers \
+             README.translators \
+             README.style \
+             build.sh \
+             git-version-gen \
+             split-version.sh
 
 MAINTAINERCLEANFILES=configure
 

@@ -3,7 +3,7 @@
 
 AC_PREREQ([2.63])
 AC_INIT([speech-dispatcher], [m4_esyscmd(./git-version-gen .tarball-version)], [speechd@lists.freebsoft.org])
-AM_INIT_AUTOMAKE([foreign])
+AM_INIT_AUTOMAKE([tar-ustar foreign])
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES(yes)])
 LT_PREREQ([2.2])
 LT_INIT([dlopen])
@@ -391,6 +391,7 @@ AC_CONFIG_FILES([Makefile
                  config/Makefile
                  config/clients/Makefile
                  config/modules/Makefile
+                 data/Makefile
                  doc/Makefile
                  include/Makefile
                  po/Makefile.in
