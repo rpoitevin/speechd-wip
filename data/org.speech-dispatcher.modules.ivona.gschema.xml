@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="utf-8"?>
+<schemalist>
+  <schema path='/org/speech-dispatcher/modules/ivona/' id='org.speech-dispatcher.modules.ivona'>
+
+    <key name='server-host' type='s'>
+      <summary>Server Host</summary>
+      <description>
+        The host name or ip address of the Ivona server.
+      </description>
+      <default>'127.0.0.1'</default>
+    </key>
+
+    <key name='server-port' type='u'>
+      <summary>Server Port</summary>
+      <description>
+        The port of the Ivona server.
+      </description>
+      <default>9123</default>
+    </key>
+
+    <key name='sample-frequency' type='u'>
+      <summary>Sample Frequency</summary>
+      <description>
+        Sample frequency to use with Ivona.
+      </description>
+      <default>16000</default>
+    </key>
+
+    <!-- maybe we should change this to an enumeration? -->
+    <key name='min-cap-let' type='i'>
+      <summary>Min Cap Let</summary>
+      <description>
+        IvonaMinCapLet overrides DefaultCapLetRecognition.  Set to:
+        1 for "icon" - play icon even if default is "none"
+        2 for "spell" - spell "capital" even if default is "none" or "icon"
+      </description>
+      <default>1</default>
+    </key>
+
+    <key name='sound-icon-path' type='s'>
+      <summary>Sound Icon Path</summary>
+      <description>
+        The path for sound icons.
+      </description>
+      <default>'/usr/share/sounds/sound-icons-0.1/'</default>
+    </key>
+
+    <key name='speaker-name' type='s'>
+      <summary>Speaker Name</summary>
+      <description>
+        Ivona Speaker (depends on Ivona version)
+        Jacek or Ewa for pl, Jennifer for en, Carmen for ro
+      </description>
+      <default>'Jacek'</default>
+    </key>
+
+    <key name='speaker-language' type='s'>
+      <summary>Speaker Language</summary>
+      <description>
+        Ivona Language.
+      </description>
+      <default>'pl'</default>
+    </key>
+
+    <key name='delimiters' type='s'>
+      <summary>Delimiters</summary>
+      <description>
+        Delimiters for message splitting. Do not change if not sure!
+      </description>
+      <default>'.;:,!?'</default>
+    </key>
+
+    <key name='punctuation-some' type='s'>
+      <summary>Punctiation for Some</summary>
+      <description>
+        Punctuation for "some"
+      </description>
+      <default>'()'</default>
+    </key>
+
+    <key name='debug' type='b'>
+      <summary>Debug</summary>
+      <description>
+        Whether debugging is enabled in the ivona output module or not.
+      </description>
+      <default>false</default>
+    </key>
+
+    <key name='debug-file' type='s'>
+      <summary>Debug File</summary>
+      <description>
+        debug-file specifies the file where the debugging information
+        should be stored (note that the log is overwritten each time
+        the module starts)
+      </description>
+      <default>'/tmp/debug-flite'</default>
+    </key>
+  </schema>
+</schemalist>

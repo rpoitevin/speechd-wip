@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<schemalist>
+  <schema path='/org/speech-dispatcher/modules/cicero/' id='org.speech-dispatcher.modules.cicero'>
+
+    <!-- CICERO EXECUTABLE AND LOG -->
+
+    <key name='executable' type='s'>
+      <summary>Executable</summary>
+      <description>
+        Executable indicates path to the cicero executable (the file called
+        tts_brltty_es.py in the original distribution of the 0.7 version).  You can
+        create a symbolic link # ln -s your-path/tts_brltty_es.py /usr/bin/cicero or
+        probably better in /usr/local/bin/cicero and modify the below option
+        accordingly.
+      </description>
+      <default>'/usr/bin/cicero'</default>
+    </key>
+
+
+    <key name='executable-log' type='s'>
+      <summary>Executable Log</summary>
+      <description>
+        executable-log is the path where logging information of the
+        original Cicero synthesizer (CiceroExecutable) should be stored.
+        This should not be confused with the logging of this module/driver
+        specified in speechd.conf.
+      </description>
+      <default>'/var/log/speech-dispatcher/cicero-executable.log'</default>
+    </key>
+
+    <!-- DEBUGING AND LOGING -->
+
+    <key name='debug' type='b'>
+      <summary>Debug</summary>
+      <description>
+        Whether debugging is enabled in the cicero output module or not.
+      </description>
+      <default>false</default>
+    </key>
+
+  </schema>
+</schemalist>

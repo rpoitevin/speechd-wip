@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<schemalist>
+  <schema path='/org/speech-dispatcher/modules/pico/' id='org.speech-dispatcher.modules.pico'>
+
+    <key name='lingware-path' type='s'>
+      <summary>Lingware Path</summary>
+      <description>
+        The path for the text analysis Lingware resource file.
+      </description>
+      <default>'/usr/share/pico/lang/'</default>
+    </key>
+
+    <key name='debug' type='b'>
+      <summary>Debug</summary>
+      <description>
+        Whether debugging is enabled in the pico output module or not.
+      </description>
+      <default>false</default>
+    </key>
+
+  </schema>
+</schemalist>
