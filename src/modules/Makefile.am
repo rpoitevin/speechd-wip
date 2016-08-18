@@ -105,3 +105,4 @@ endif
 -include $(top_srcdir)/git.mk
 @INTLTOOL_XML_NOMERGE_RULE@
 @GSETTINGS_RULES@
+EXTRA_DIST = $(gsettings_SCHEMAS)
