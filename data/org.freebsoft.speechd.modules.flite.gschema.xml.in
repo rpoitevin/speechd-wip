@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<schemalist>
+<schemalist gettext-domain="speech-dispatcher">
   <schema path='/org/freebsoft/speechd/modules/flite/' id='org.freebsoft.speechd.modules.flite'>
 
     <key name='max-chunk-length' type='u'>
