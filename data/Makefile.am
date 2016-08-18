@@ -54,3 +54,5 @@ EXTRA_DIST = org.freebsoft.speechd.modules.cicero.gschema.xml.in.in \
              org.freebsoft.speechd.server.gschema.xml.in.in
 
 DISTCLEANFILES = $(gsettings_SCHEMAS) gschemas.compiled
+
+-include $(top_srcdir)/git.mk
