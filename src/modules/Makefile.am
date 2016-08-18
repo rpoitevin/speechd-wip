@@ -103,4 +103,5 @@ sd_pico_LDADD = $(top_builddir)/src/common/libcommon.la \
 endif
 
 -include $(top_srcdir)/git.mk
+@INTLTOOL_XML_NOMERGE_RULE@
 @GSETTINGS_RULES@

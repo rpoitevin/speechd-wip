@@ -3,8 +3,8 @@
   <schema id='org.freebsoft.speechd.modules.generic'>
 
     <key name='execute-synth' type='s'>
-      <summary>Execute Synthesizer</summary>
-      <description>
+      <_summary>Execute Synthesizer</_summary>
+      <_description>
         execute-synth is the shell command that should be
         executed in order to say some message. This command must
         stop saying the message on SIGKILL, otherwise it's useless.
@@ -12,60 +12,60 @@
         which will be substituted for the appropriate value (you
         can modify this value, see other parameters).
         The command can be split into more lines, if necessary, using '\'.
-      </description>
+      </_description>
       <default>"echo \'$DATA\' | espeak -w $TMPDIR/espeak.wav -v $VOICE -s $RATE -a $VOLUME -p $PITCH $PUNCT --stdin &amp;&amp; $PLAY_COMMAND $TMPDIR/espeak.wav"</default>
     </key>
 
     <key name='punctuation-none' type='s'>
-      <summary>Punctuation None</summary>
-      <description>
+      <_summary>Punctuation None</_summary>
+      <_description>
         punctuation-none controls punctuation level None.
         It will be substituted into the $PUNCT variable depending
         on the value passed to speech dispatcher from applications.
         Note that if an empty string is specified, then $PUNCT will be blank 
         which is a default situation for espeak.
-      </description>
+      </_description>
       <default>''</default>
     </key>
 
     <key name='punctuation-some' type='s'>
-      <summary>Punctuation Some</summary>
-      <description>
+      <_summary>Punctuation Some</_summary>
+      <_description>
         punctuation-some controls punctuation level Some.
         It will be substituted into the $PUNCT variable depending
         on the value passed to speech dispatcher from applications.
         Note that if an empty string is specified, then $PUNCT will be blank 
         which is a default situation for espeak.
-      </description>
+      </_description>
       <default>'--punct=\"()[]{};:\"'</default>
     </key>
 
     <key name='punctuation-all' type='s'>
-      <summary>Punctuation All</summary>
-      <description>
+      <_summary>Punctuation All</_summary>
+      <_description>
         punctuation-all controls punctuation level All.
         It will be substituted into the $PUNCT variable depending
         on the value passed to speech dispatcher from applications.
         Note that if an empty string is specified, then $PUNCT will be blank 
         which is a default situation for espeak.
-      </description>
+      </_description>
       <default>'--punct'</default>
     </key>
 
     <key name='strip-punctuation-characters' type='s'>
-      <summary>Strip Punctuation Characters</summary>
-      <description>
+      <_summary>Strip Punctuation Characters</_summary>
+      <_description>
         strip-punctuation-characters is a list (enclosed in doublequotes) of
         all the characters that should be replaced by whitespaces in
         order not to be badly handled by the output module or misinterpreted
         by shell.
-      </description>
+      </_description>
       <default>''</default>
     </key>
 
     <key name='rate-add' type='u'>
-      <summary>Rate Add</summary>
-      <description>
+      <_summary>Rate Add</_summary>
+      <_description>
         These parameters set _rate_, _pitch_, and _volume_ conversion. This is
         part of the core of the definition of this generic output
         module for this concrete synthesizer, it's not intended to
@@ -85,74 +85,74 @@
         
         The SSIP defaults are actually controlled via DefaultRate, DefaultPitch, and
         DefaultVolume in the speechd.conf file.
-      </description>
+      </_description>
       <default>160</default>
     </key>
 
     <key name='pitch-add' type='u'>
-      <summary>Pitch Add</summary>
-      <description>
+      <_summary>Pitch Add</_summary>
+      <_description>
         See rate-add
-      </description>
+      </_description>
       <default>50</default>
     </key>
     
     <key name='volume-add' type='u'>
-      <summary>Volume Add</summary>
-      <description>
+      <_summary>Volume Add</_summary>
+      <_description>
         See rate-add
-      </description>
+      </_description>
       <default>10</default>
     </key>
 
     <key name='rate-multiply' type='u'>
-      <summary>Rate Multiply</summary>
-      <description>
+      <_summary>Rate Multiply</_summary>
+      <_description>
         (These values are multiplied by 100, because DotConf currently
         doesn't support floats. So you can write 0.85 as 85 and so on.)
-      </description>
+      </_description>
       <default>160</default>
     </key>
 
     <key name='pitch-multiply' type='u'>
-      <summary>Pitch Multiply</summary>
-      <description>
+      <_summary>Pitch Multiply</_summary>
+      <_description>
         See rate-multiply
-      </description>
+      </_description>
       <default>10</default>
     </key>
 
     <key name='rate-force-integer' type='b'>
-      <summary>Rate Force Integer</summary>
-      <description>
+      <_summary>Rate Force Integer</_summary>
+      <_description>
         If the client program can't handle floats, you will have to
         use these two options to force integers as the parameters
         true means force integers, false means do nothing (write floats).
-      </description>
+      </_description>
       <default>true</default>
     </key>
 
     <key name='pitch-force-integer' type='b'>
-      <summary>Pitch Force Integer</summary>
-      <description>
+      <_summary>Pitch Force Integer</_summary>
+      <_description>
         See rate-force-integer
-      </description>
+      </_description>
       <default>true</default>
     </key>
     
     <key name='volume-force-integer' type='b'>
-      <summary>Volume Force Integer</summary>
-      <description>
+      <_summary>Volume Force Integer</_summary>
+      <_description>
         See rate-force-integer
-      </description>
+      </_description>
       <default>true</default>
     </key>
 
     <key name='debug' type='b'>
-      <summary>Debug</summary>
-      <description>
+      <_summary>Debug</_summary>
+      <_description>
         Whether debugging is enabled in this generic output module or not.
-      </description>
+      </_description>
       <default>false</default>
     </key>
 

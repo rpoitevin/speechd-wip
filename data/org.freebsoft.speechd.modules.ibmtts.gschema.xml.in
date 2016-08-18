@@ -4,32 +4,32 @@
 
 
     <key name='audio-chunk-size' type='u'>
-      <summary>Audio Chunk Size</summary>
-      <description>
+      <_summary>Audio Chunk Size</_summary>
+      <_description>
         The number of samples returned by IBM TTS.
-      </description>
+      </_description>
       <default>20000</default>
     </key>
 
     <!-- SSML Support -->
 
     <key name='use-ssml' type='b'>
-      <summary>Use SSML</summary>
-      <description>
+      <_summary>Use SSML</_summary>
+      <_description>
         Some version of IBM TTS support SSML. If IbmttsUseSSML
         is set to 1, SSML will be used and advanced features like
         index marking will be working. If set to 0, all SSML is
         deleted from the message prior to sending it to IBM TTS.
         By default, SSML support is switched on.
-      </description>
+      </_description>
       <default>true</default>
     </key>
 
     <!-- User dictionaries -->
 
     <key name='dictionary-folder' type='s'>
-      <summary>Dictionary Folder</summary>
-      <description>
+      <_summary>Dictionary Folder</_summary>
+      <_description>
         IBM TTS supports user dictionaries so that you may customize 
         the pronunciation of words, beginning of words or abbreviations
         according to the language. 
@@ -84,7 +84,7 @@
         pt_BR: Brazilian Portuguese
         zh_CN: Mandarin Chinese
         zh_TW: Mandarin Taiwanese
-      </description>
+      </_description>
       <default>'/var/opt/IBM/ibmtts/dict'</default>
     </key>
 
@@ -92,18 +92,18 @@
     <!-- Abbreviation dictionaries -->
 
     <key name='use-abbreviation' type='b'>
-      <summary>Use Abbreviation Dictionaries</summary>
-      <description>
+      <_summary>Use Abbreviation Dictionaries</_summary>
+      <_description>
         Enable the abbreviation dictionaries.
-      </description>
+      </_description>
       <default>true</default>
     </key>
 
     <!-- SOUND ICONS -->
 
     <key name='sound-icon-folder' type='s'>
-      <summary>Sound Icon Folder</summary>
-      <description>
+      <_summary>Sound Icon Folder</_summary>
+      <_description>
         IBM TTS Synthesizer does not currently support sound icons
         (audio files that are played by name when an application requests
         a sound icon).  If you have installed the free(b)soft sound-icons
@@ -111,7 +111,7 @@
         blank, the IBM TTS Output Module will play them if it finds a
         file whose name matches the sound icon name.  If blank, or no
         matching file is found, the name of the sound icon will be spoken.
-      </description>
+      </_description>
       <default>'/usr/share/sounds/sound-icons/'</default>
     </key>
 
@@ -217,20 +217,20 @@ IbmttsKeySubstitution "en"  "Z"         "capital Z "
     <!-- Debug -->
 
     <key name='debug' type='b'>
-      <summary>Debug</summary>
-      <description>
+      <_summary>Debug</_summary>
+      <_description>
         Whether debugging is enabled in the ibmtts output module or not.
-      </description>
+      </_description>
       <default>false</default>
     </key>
 
     <key name='debug-file' type='s'>
-      <summary>Debug File</summary>
-      <description>
+      <_summary>Debug File</_summary>
+      <_description>
         debug-file specifies the file where the debugging information
         should be stored (note that the log is overwritten each time
         the module starts)
-      </description>
+      </_description>
       <default>'/tmp/debug-ibmtts'</default>
     </key>
   </schema>

@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <schemalist>
 
-  <schema path='/org/freebsoft/speechd/modules/espeak-ng/' id='org.freebsoft.speechd.modules.espeak-ng'>
+  <schema path='/org/freebsoft/speechd/modules/espeak/' id='org.freebsoft.speechd.modules.espeak'>
 
     <!-- Sound Icons -->
 
     <key name='sound-icon-folder' type='s'>
-      <summary>Sound Icon Folder</summary>
-      <description>
+      <_summary>Sound Icon Folder</_summary>
+      <_description>
         Espeak  does not currently support playing sound icons
         (audio files that are played by name when an application requests
         a sound icon).  If you have installed the free(b)soft sound-icons
@@ -15,33 +15,33 @@
         blank, the espeak Output Module will play them if it finds a
         file whose name matches the sound icon name.  If blank, or no
         matching file is found, the name of the sound icon will be spoken.
-      </description>
+      </_description>
       <default>'/usr/share/sounds/sound-icons/'</default>
     </key>
 
     <key name='sound-icon-volume' type='u'>
-      <summary>Sound Icon Volume</summary>
-      <description>Volume at which sound icons are played.</description>
+      <_summary>Sound Icon Volume</_summary>
+      <_description>Volume at which sound icons are played.</_description>
       <default>0</default>
     </key>
 
     <!-- Punctuation -->
 
     <key name='punctuation-list' type='s'>
-      <summary>Punctuation List</summary>
-      <description>
+      <_summary>Punctuation List</_summary>
+      <_description>
         Characters to be spoken when punctuation setting is 'some'
         Encoding is UTF-8
-      </description>
+      </_description>
       <default>'@+_'</default>
     </key>
     
     <key name='capital-pitch-rise' type='u'>
-      <summary>Capital Pitch Rise</summary>
-      <description>
+      <_summary>Capital Pitch Rise</_summary>
+      <_description>
         This values gives the amount in Hz by which the pitch
         of a word raised to indicate it has a capital letter.
-      </description>
+      </_description>
       <default>0</default>
     </key>
 
@@ -51,26 +51,26 @@
          -s parameter for the -s option in espeak command line tool. -->
 
     <key name='min-rate' type='i'>
-      <summary>Minimum Rate</summary>
-      <description>
+      <_summary>Minimum Rate</_summary>
+      <_description>
         Minimum rate (-100 in speech-dispatcher)
-      </description>
+      </_description>
       <default>80</default>
     </key>
 
     <key name='normal-rate' type='i'>
-      <summary>Normal Rate</summary>
-      <description>
+      <_summary>Normal Rate</_summary>
+      <_description>
         Normal rate (0 in speech-dispatcher)
-      </description>
+      </_description>
       <default>170</default>
     </key>
 
     <key name='max-rate' type='i'>
-      <summary>Max Rate</summary>
-      <description>
+      <_summary>Max Rate</_summary>
+      <_description>
         Maximum rate (100 in speech-dispatcher)
-      </description>
+      </_description>
       <default>390</default>
 
     </key>
@@ -78,40 +78,40 @@
     <!-- Espeak variants -->
 
     <key name='list-voice-variants' type='b'>
-      <summary>List Voice Variants</summary>
-      <description>
+      <_summary>List Voice Variants</_summary>
+      <_description>
         Controls whether espeak voice variants are presented in the list of
         available voices. A value of 1 will present an espeak voice, plus the
         espeak voice with all the available variants. A value of 0 will present
         the list of espeak voices only.
-      </description>
+      </_description>
       <default>false</default>
     </key>
 
     <!-- Internal parameters -->
 
     <key name='audio-chunk-size' type='u'>
-      <summary>Audio Chunk Size</summary>
-      <description>
+      <_summary>Audio Chunk Size</_summary>
+      <_description>
         Number of ms of audio returned by the espeak cal
 lback function.
-      </description>
+      </_description>
       <default>3000</default>
     </key>
 
     <key name='audio-queue-max-size' type='u'>
-      <summary>Audio Queue Max Size</summary>
-      <description>
+      <_summary>Audio Queue Max Size</_summary>
+      <_description>
         Maximum number of samples to buffer in playback queue.
-      </description>
+      </_description>
       <default>441000</default>
     </key>
 
     <key name='debug' type='b'>
-      <summary>Debug</summary>
-      <description>
+      <_summary>Debug</_summary>
+      <_description>
         Whether debugging is enabled in the espeak output module or not.
-      </description>
+      </_description>
       <default>false</default>
     </key>
 

@@ -3,30 +3,30 @@
   <schema path='/org/freebsoft/speechd/modules/flite/' id='org.freebsoft.speechd.modules.flite'>
 
     <key name='max-chunk-length' type='u'>
-      <summary>Max Chunk Length</summary>
+      <_summary>Max Chunk Length</_summary>
       <default>500</default>
     </key>
     
     <key name='delimiters' type='s'>
-      <summary>Delimiters</summary>
+      <_summary>Delimiters</_summary>
       <default>'.?!;'</default>
     </key>
 
     <key name='debug' type='b'>
-      <summary>Debug</summary>
-      <description>
+      <_summary>Debug</_summary>
+      <_description>
         Whether debugging is enabled in the espeak output module or not.
-      </description>
+      </_description>
       <default>false</default>
     </key>
 
     <key name='debug-file' type='s'>
-      <summary>Debug File</summary>
-      <description>
+      <_summary>Debug File</_summary>
+      <_description>
         debug-file specifies the file where the debugging information
         should be stored (note that the log is overwritten each time
         the module starts)
-      </description>
+      </_description>
       <default>'/tmp/debug-flite'</default>
     </key>
   </schema>

@@ -6,27 +6,27 @@
     <!-- FESTIVAL SERVER SETTINGS -->
 
     <key name='server-host' type='s'>
-      <summary>Festival Server Host</summary>
-      <description>
+      <_summary>Festival Server Host</_summary>
+      <_description>
         Address where the Festival server runs (you have to
         have a Festival server running, please see documentation).
-      </description>
+      </_description>
       <default>'localhost'</default>
     </key>
 
     <key name='server-port' type='u'>
-      <summary>Festival Server Port</summary>
-      <description>
+      <_summary>Festival Server Port</_summary>
+      <_description>
         The port where the Festival server is listening.
-      </description>
+      </_description>
       <default>1314</default>
     </key>
 
     <!-- CACHING -->
 
     <key name='cache-on' type='b'>
-      <summary>Cache On</summary>
-      <description>
+      <_summary>Cache On</_summary>
+      <_description>
         Festival output module supports a caching mechanism for
         repeated events like characters, keys and sound icons
         that saves the wavefiles retrieved from the synthesizer
@@ -36,13 +36,13 @@
         with cursor keys, sound icons are faster and so on.
         If you wish to enable this caching mechanism, turn
         cache-on to true, or switch it off by false.
-      </description>
+      </_description>
       <default>true</default>
     </key>
 
     <key name='cache-max-kbytes' type='u'>
-      <summary>Cache Max KBytes</summary>
-      <description>
+      <_summary>Cache Max KBytes</_summary>
+      <_description>
         How large should the memmory assigned to output module for
         cache should be. Festival will never overcome this limit.
         If there are more messages to save, the ones that are least
@@ -52,13 +52,13 @@
         it from the cache, but you will save system resources. If you
         set it higher, it might make the module more responsive.
         The value is given in kilobytes, default is 10 megabytes.
-      </description>
+      </_description>
       <default>10240</default>
     </key>
 
     <key name='cache-distinguish-voices' type='b'>
-      <summary>Cache Distinguish Voices</summary>
-      <description>
+      <_summary>Cache Distinguish Voices</_summary>
+      <_description>
         Normally, the cache pool is common for all voices, rates and
         pitches. This means that when for example the key 'r' gets cached,
         you change the voice and request the key 'r' again, it will be
@@ -68,13 +68,13 @@
         it saves system resources. But if you want to keep separate caches
         for different voices (and even rates and pitches), please set the
         corresponding parameters to true. (false means don't distinguish).
-      </description>
+      </_description>
       <default>false</default>
     </key>
 
     <key name='cache-distinguish-rate' type='b'>
-      <summary>Cache Distinguish Rate</summary>
-      <description>
+      <_summary>Cache Distinguish Rate</_summary>
+      <_description>
         Normally, the cache pool is common for all voices, rates and
         pitches. This means that when for example the key 'r' gets cached,
         you change the voice and request the key 'r' again, it will be
@@ -84,13 +84,13 @@
         it saves system resources. But if you want to keep separate caches
         for different voices (and even rates and pitches), please set the
         corresponding parameters to 1. (0 means don't distinguish).
-      </description>
+      </_description>
       <default>false</default>
     </key>
 
     <key name='cache-distinguish-pitch' type='b'>
-      <summary>Cache Distinguish Pitch</summary>
-      <description>
+      <_summary>Cache Distinguish Pitch</_summary>
+      <_description>
         Normally, the cache pool is common for all voices, rates and
         pitches. This means that when for example the key 'r' gets cached,
         you change the voice and request the key 'r' again, it will be
@@ -100,15 +100,15 @@
         it saves system resources. But if you want to keep separate caches
         for different voices (and even rates and pitches), please set the
         corresponding parameters to 1. (0 means don't distinguish).
-      </description>
+      </_description>
       <default>false</default>
     </key>
 
     <!-- FESTIVAL PERFORMANCE -->
 
     <key name='reopen-socket' type='b'>
-      <summary>Reopen Socket</summary>
-      <description>
+      <_summary>Reopen Socket</_summary>
+      <_description>
         Switching reopen-socket to true will make the module close the
         connection to Festival each time the currently synthesized wavefile
         is no longer needed to finish and new text is waiting. This may improve
@@ -118,27 +118,27 @@
         unnecessary delays that affect the performance heavily in this mode.
         Unless your Festival is patched against this bug, switching this on
         is not recommended.
-      </description>
+      </_description>
       <default>false</default>
     </key>
 
     <!-- DEBUGING -->
 
     <key name='debug' type='b'>
-      <summary>Debug</summary>
-      <description>
+      <_summary>Debug</_summary>
+      <_description>
         Whether debugging is enabled in the festival output module or not.
-      </description>
+      </_description>
       <default>false</default>
     </key>
 
     <key name='debug-save-output' type='b'>
-      <summary>Debug Save Output</summary>
-      <description>
+      <_summary>Debug Save Output</_summary>
+      <_description>
         If debug-save-output is set, it writes the produced sound tracks
         to /tmp/debug-festival-*.snd before it says them. You can later browse them
         for debugging purposes. They are numbered in order starting from 0.
-      </description>
+      </_description>
       <default>false</default>
     </key>
   </schema>

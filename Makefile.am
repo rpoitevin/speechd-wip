@@ -1,5 +1,6 @@
 ## Process this file with automake to produce Makefile.in
 gsettings_SCHEMAS = data/org.freebsoft.speechd.server.gschema.xml
+@INTLTOOL_XML_NOMERGE_RULE@
 @GSETTINGS_RULES@
 
 

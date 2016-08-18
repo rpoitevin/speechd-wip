@@ -3,18 +3,18 @@
   <schema path='/org/freebsoft/speechd/modules/pico/' id='org.freebsoft.speechd.modules.pico'>
 
     <key name='lingware-path' type='s'>
-      <summary>Lingware Path</summary>
-      <description>
+      <_summary>Lingware Path</_summary>
+      <_description>
         The path for the text analysis Lingware resource file.
-      </description>
+      </_description>
       <default>'/usr/share/pico/lang/'</default>
     </key>
 
     <key name='debug' type='b'>
-      <summary>Debug</summary>
-      <description>
+      <_summary>Debug</_summary>
+      <_description>
         Whether debugging is enabled in the pico output module or not.
-      </description>
+      </_description>
       <default>false</default>
     </key>
 
