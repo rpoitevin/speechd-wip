@@ -25,6 +25,8 @@ import socket
 import time
 import datetime
 
+from gi.repository import Gio
+
 from optparse import OptionParser
 from xdg import BaseDirectory
 
@@ -98,7 +100,7 @@ def question_with_suggested_answers(text, default, suggest):
         report(_("""The value you have chosen is not among the suggested values.
 You have chosen '%s'.""" % reply))
         report(_("The suggested values are " + str(suggest)))
-        correct = question(_("Do you want to correct your answer?", True))
+        correct = question(_("Do you want to correct your answer?"), True)
         if correct == True:
             reply = question(text, default)
         else:
@@ -633,10 +635,32 @@ class Configure:
     default_output_module = None
     default_language = None
     default_audio_method = None
+    settings = Gio.Settings.new("org.freebsoft.speechd.server")
+    schema_source = Gio.SettingsSchemaSource.get_default()
+    schema = schema_source.lookup("org.freebsoft.speechd.server", False)
     
     def remove_user_configuration(self):
         """Remove user configuration tree"""
         shutil.rmtree(test.user_conf_dir())
+
+    def representsInt(self, s):
+        try: 
+            int(s)
+            return True
+        except ValueError:
+            return False
+
+    def options_set(self, options):
+        """Set the given options with given values.
+
+        Arguments:
+        options -- a list of tuples (option_name, value)"""
+
+        for opt, value in options.items():
+            if self.representsInt(value):
+                self.settings.set_int(opt, int(value))
+            elif isinstance(value, str):
+                self.settings.set_string(opt, value)
 
     def options_substitute(self, configfile, options):
         """Substitute the given options with given values.
@@ -725,10 +749,12 @@ Do you want to keep it?"""), False)
             raise ValueError("Invalid configuration type")
 
         # Now determine the most important config option
+        module_key = self.schema.get_key("default-module")
+        answers = module_key.get_range()
         self.default_output_module = question_with_suggested_answers(
             "Default output module",
             "espeak",
-            ["espeak", "flite", "festival", "cicero", "ibmtts"])
+            answers[1])
 
         self.default_language = question(
             "Default language (two-letter iso language code like \"en\" or \"cs\")",
@@ -757,15 +783,15 @@ Do you want to keep it?"""), False)
         elif type == 'system':
             configfile = os.path.join(test.system_conf_dir(), "speechd.conf")
 
-        self.options_substitute(configfile, 
-                                {"DefaultModule": self.default_output_module,
-                                 "DefaultLanguage": self.default_language,
-                                 "AudioOutputMethod": self.default_audio_method,
-                                 "DefaultRate": self.default_speech_rate,
-                                 "DefaultPitch": self.default_speech_pitch,
-                                 "DefaultPitchRange": self.default_speech_pitch_range,
-                                 "DefaultLanguage": self.default_language,
-                                 })
+        self.options_set({"default-module": self.default_output_module,
+                          "default-language": self.default_language,
+                          "audio-output-method": self.default_audio_method,
+                          "default-rate": self.default_speech_rate,
+                          "default-pitch": self.default_speech_pitch,
+                          "default-pitch-range": self.default_speech_pitch_range,
+                          "default-language": self.default_language,
+                          })
+
         if type == 'user':
             self.setup_autostart = question(
                 _("""Do you want to have Speech Dispatcher automatically started from ~/.config/autostart ?
@@ -836,7 +862,7 @@ you have to start it manually to continue."""))
             'user', ['user', 'system'])
 
         if speechd_type == 'user':
-            self.create_user_configuration()
+            # self.create_user_configuration()
             self.configure_basic_settings(type='user')
         elif speechd_type == 'system':
             self.configure_basic_settings(type='system')
@@ -880,7 +906,7 @@ def main():
     
     if options.create_user_configuration:
         # Check for and/or create basic user configuration
-        configure.create_user_configuration()
+        # configure.create_user_configuration()
         reply = question(_("Do you want to continue with basic settings?"), True)
         if reply:
             configure.configure_basic_settings(type='user')
