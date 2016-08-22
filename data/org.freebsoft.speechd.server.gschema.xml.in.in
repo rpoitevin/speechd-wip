@@ -358,6 +358,14 @@
         The Default Module selects which output module is the default.  You
         must use one of the names of the modules from the enabled-modules setting.
       </_description>
+      <choices>
+        <choice value="espeak" />
+        <choice value="flite" />
+        <choice value="festival" />
+        <choice value="cicero" />
+        <choice value="ibmtts" />
+        <choice value="pico" />
+      </choices>
       <default>'espeak'</default>
     </key>
 
