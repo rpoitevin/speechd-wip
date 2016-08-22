@@ -67,8 +67,7 @@ void load_default_global_set_options()
 	if (!SpeechdOptions.log_level_set)
 		SpeechdOptions.log_level = g_settings_get_uint (spd_settings, "log-level");
 	if (!SpeechdOptions.communication_method_set) {
-		unsigned int method = g_settings_get_enum (spd_settings, "communication-method");
-		SpeechdOptions.communication_method = method == 0 ? g_strdup("unix_socket") : g_strdup("inet_socket");
+		SpeechdOptions.communication_method = g_settings_get_enum (spd_settings, "communication-method");
 	}
 	if (!SpeechdOptions.socket_path_set)
 		SpeechdOptions.socket_path = g_settings_get_string (spd_settings, "socket-path");

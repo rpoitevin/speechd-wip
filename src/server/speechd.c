@@ -559,7 +559,7 @@ void speechd_options_init(void)
 {
 	SpeechdOptions.spawn = FALSE;
 	SpeechdOptions.log_level_set = 0;
-	SpeechdOptions.communication_method = NULL;
+	SpeechdOptions.communication_method = SPD_METHOD_UNIX_SOCKET;
 	SpeechdOptions.socket_path = NULL;
 	SpeechdOptions.port_set = 0;
 	SpeechdOptions.localhost_access_only_set = 0;
@@ -953,7 +953,8 @@ int main(int argc, char *argv[])
 {
 	int ret;
 	/* Autospawn helper variables */
-	char *spawn_communication_method = NULL;
+	SPDConnectionMethod spawn_communication_method;
+	gboolean spawn_communication_method_set = FALSE;
 	int spawn_port = 0;
 	char *spawn_socket_path = NULL;
 
@@ -978,10 +979,9 @@ int main(int argc, char *argv[])
 		   parameters into temporary spawn_ variables for later comparison
 		   with the config file and unset them */
 		if (SpeechdOptions.communication_method_set) {
-			spawn_communication_method =
-			    g_strdup(SpeechdOptions.communication_method);
-			g_free(SpeechdOptions.communication_method);
+			spawn_communication_method = SpeechdOptions.communication_method;
 			SpeechdOptions.communication_method_set = 0;
+			spawn_communication_method_set = TRUE;
 		}
 		if (SpeechdOptions.port_set) {
 			spawn_port = SpeechdOptions.port;
@@ -1116,22 +1116,21 @@ int main(int argc, char *argv[])
 	/* TODO: This should preferably be done much sooner, but the current
 	   configuration mechanism doesn't allow it */
 	if (SpeechdOptions.spawn) {
-		if (spawn_communication_method) {
-			if (strcmp
-			    (spawn_communication_method,
-			     SpeechdOptions.communication_method)) {
+		if (spawn_communication_method_set) {
+			/* I don't think it's possible to hit this if anymore, since we only set
+			spawn_communication_method_set to true if we assign spawn_communication_method
+			based on SpeechdOptions.communication_method... */
+			if (spawn_communication_method != SpeechdOptions.communication_method) {
 				MSG(-1,
 				    "Autospawn failed: Mismatch in communication methods. Client "
-				    "requests %s, most probably due to its configuration or the value of "
+				    "requests %d, most probably due to its configuration or the value of "
 				    "the SPEECHD_ADDRESS environment variable, but the server is configured "
-				    "to provide the %s method.",
+				    "to provide the %d method.",
 				    spawn_communication_method,
 				    SpeechdOptions.communication_method);
 				exit(1);
 			} else {
-				if (!strcmp
-				    (SpeechdOptions.communication_method,
-				     "inet_socket")) {
+				if (SpeechdOptions.communication_method == SPD_METHOD_INET_SOCKET) {
 					/* Check port */
 					if (spawn_port != 0)
 						if (spawn_port !=
@@ -1146,9 +1145,7 @@ int main(int argc, char *argv[])
 							    spawn_port);
 							exit(1);
 						}
-				} else if (!strcmp
-					   (SpeechdOptions.communication_method,
-					    "unix_socket")) {
+				} else if (SpeechdOptions.communication_method == SPD_METHOD_UNIX_SOCKET) {
 					/* Check socket name */
 					if (spawn_socket_path)
 						if (strcmp
@@ -1169,16 +1166,15 @@ int main(int argc, char *argv[])
 					assert(0);
 			}
 		}
-		g_free(spawn_communication_method);
 		g_free(spawn_socket_path);
 	}
 
-	if (!strcmp(SpeechdOptions.communication_method, "inet_socket")) {
+	if (SpeechdOptions.communication_method == SPD_METHOD_INET_SOCKET) {
 		MSG(4, "Speech Dispatcher will use inet port %d",
 		    SpeechdOptions.port);
 		/* Connect and start listening on inet socket */
 		server_socket = make_inet_socket(SpeechdOptions.port);
-	} else if (!strcmp(SpeechdOptions.communication_method, "unix_socket")) {
+	} else if (SpeechdOptions.communication_method == SPD_METHOD_UNIX_SOCKET) {
 		/* Determine appropariate socket file name */
 		MSG(4, "Speech Dispatcher will use local unix socket: %s",
 		    SpeechdOptions.socket_path);

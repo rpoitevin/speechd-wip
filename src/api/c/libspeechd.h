@@ -50,11 +50,6 @@ typedef enum {
 	SPD_MODE_THREADED = 1
 } SPDConnectionMode;
 
-typedef enum {
-	SPD_METHOD_UNIX_SOCKET = 0,
-	SPD_METHOD_INET_SOCKET = 1,
-} SPDConnectionMethod;
-
 typedef struct {
 	SPDConnectionMethod method;
 	char *unix_socket_name;

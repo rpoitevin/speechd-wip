@@ -173,7 +173,11 @@ void options_parse(int argc, char *argv[])
 			SpeechdOptions.log_dir_set = 1;
 			break;
 		case 'c':
-			SPD_OPTION_SET_STR(communication_method);
+			if (!strcmp(optarg, "inet_socket"))
+				SpeechdOptions.communication_method = SPD_METHOD_INET_SOCKET;
+			else
+				/* Default to unix socket if option isn't inet_socket */
+				SpeechdOptions.communication_method = SPD_METHOD_UNIX_SOCKET;
 			SpeechdOptions.communication_method_set = 1;
 			break;
 		case 'S':

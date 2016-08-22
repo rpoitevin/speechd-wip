@@ -24,6 +24,11 @@
 #define SPEECHD_TYPES_H
 
 typedef enum {
+	SPD_METHOD_UNIX_SOCKET = 0,
+	SPD_METHOD_INET_SOCKET = 1,
+} SPDConnectionMethod;
+
+typedef enum {
 	SPD_PUNCT_ALL = 0,
 	SPD_PUNCT_NONE = 1,
 	SPD_PUNCT_SOME = 2

@@ -150,7 +150,7 @@ typedef struct {
 #include "speaking.h"
 
 struct {
-	char *communication_method;
+	SPDConnectionMethod communication_method;
 	int communication_method_set;
 	char *socket_path;
 	int socket_path_set;
