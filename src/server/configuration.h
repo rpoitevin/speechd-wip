@@ -28,8 +28,6 @@
 #include <stdlib.h>
 #include <gio/gio.h>
 
-GSettings *spd_settings;
-
 void load_default_global_set_options();
 
 #endif

@@ -33,6 +33,15 @@
 
 /* == DEFAULT OPTIONS == */
 
+static void
+spd_update_log_level(GSettings *settings,
+					 gchar *key,
+					 gpointer user_data)
+{
+	SpeechdOptions.log_level = g_settings_get_uint (settings, "log-level");
+	MSG(0, "log level changing to %d", SpeechdOptions.log_level);
+}
+
 void load_default_global_set_options()
 {
 	spd_settings = g_settings_new ("org.freebsoft.speechd.server");
@@ -64,8 +73,11 @@ void load_default_global_set_options()
 
 	/* Options which are accessible from command line must be handled
 	   specially to make sure we don't overwrite them */
-	if (!SpeechdOptions.log_level_set)
-		SpeechdOptions.log_level = g_settings_get_uint (spd_settings, "log-level");
+	if (!SpeechdOptions.log_level_set) {
+		g_signal_connect (spd_settings, "changed::log-level",
+						  G_CALLBACK(spd_update_log_level), NULL);
+		spd_update_log_level (spd_settings, NULL, NULL);
+	}
 	if (!SpeechdOptions.communication_method_set) {
 		SpeechdOptions.communication_method = g_settings_get_enum (spd_settings, "communication-method");
 	}

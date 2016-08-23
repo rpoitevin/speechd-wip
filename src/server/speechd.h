@@ -46,6 +46,7 @@
 
 #include <glib.h>
 #include <glib-unix.h>
+#include <gio/gio.h>
 
 #include <semaphore.h>
 #include <sys/ipc.h>
@@ -172,6 +173,8 @@ struct {
 	int server_timeout;
 	int server_timeout_set;
 } SpeechdOptions;
+
+GSettings *spd_settings;
 
 struct {
 	int max_uid;		/* The largest assigned uid + 1 */
