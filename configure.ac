@@ -390,7 +390,6 @@ AC_CONFIG_FILES([Makefile
                  speech-dispatcher.pc
                  config/Makefile
                  config/clients/Makefile
-                 config/modules/Makefile
                  data/Makefile
                  doc/Makefile
                  include/Makefile
