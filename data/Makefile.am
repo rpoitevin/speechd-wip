@@ -38,16 +38,16 @@ gschemas.compiled: $(gsettings_SCHEMAS:.xml=.valid)
 
 all-local: gschemas.compiled
 
-EXTRA_DIST = org.freebsoft.speechd.modules.cicero.gschema.xml.in.in \
-             org.freebsoft.speechd.modules.espeak.gschema.xml.in.in \
-             org.freebsoft.speechd.modules.espeak-ng.gschema.xml.in.in \
-             org.freebsoft.speechd.modules.festival.gschema.xml.in.in \
-             org.freebsoft.speechd.modules.flite.gschema.xml.in.in \
-             org.freebsoft.speechd.modules.generic.gschema.xml.in.in \
-             org.freebsoft.speechd.modules.ibmtts.gschema.xml.in.in \
-             org.freebsoft.speechd.modules.ivona.gschema.xml.in.in \
-             org.freebsoft.speechd.modules.pico.gschema.xml.in.in \
-             org.freebsoft.speechd.server.gschema.xml.in.in
+EXTRA_DIST = org.freebsoft.speechd.modules.cicero.gschema.xml.in \
+             org.freebsoft.speechd.modules.espeak.gschema.xml.in \
+             org.freebsoft.speechd.modules.espeak-ng.gschema.xml.in \
+             org.freebsoft.speechd.modules.festival.gschema.xml.in \
+             org.freebsoft.speechd.modules.flite.gschema.xml.in \
+             org.freebsoft.speechd.modules.generic.gschema.xml.in \
+             org.freebsoft.speechd.modules.ibmtts.gschema.xml.in \
+             org.freebsoft.speechd.modules.ivona.gschema.xml.in \
+             org.freebsoft.speechd.modules.pico.gschema.xml.in \
+             org.freebsoft.speechd.server.gschema.xml.in
 
 DISTCLEANFILES = $(gsettings_SCHEMAS) gschemas.compiled
 
