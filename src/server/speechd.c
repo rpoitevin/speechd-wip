@@ -953,7 +953,7 @@ int main(int argc, char *argv[])
 {
 	int ret;
 	/* Autospawn helper variables */
-	SPDConnectionMethod spawn_communication_method;
+	SPDConnectionMethod spawn_communication_method = SPD_METHOD_UNIX_SOCKET;
 	gboolean spawn_communication_method_set = FALSE;
 	int spawn_port = 0;
 	char *spawn_socket_path = NULL;
