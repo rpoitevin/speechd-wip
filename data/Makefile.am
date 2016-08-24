@@ -31,10 +31,6 @@ endif
 
 @GSETTINGS_RULES@
 
-%.gschema.xml.in: %.gschema.xml.in.in Makefile
-	$(AM_V_GEN) sed -e 's|@GETTEXT_PACKAGE[@]|$(GETTEXT_PACKAGE)|g' \
-	$< > $@ || rm $@
-
 # We need to compile schemas at make time
 # to run from source tree
 gschemas.compiled: $(gsettings_SCHEMAS:.xml=.valid)
