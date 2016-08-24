@@ -947,6 +947,129 @@ void check_client_count(void)
 	}
 }
 
+void speechd_init_pidfile(void)
+{
+	/* By default, search for sockets and pid files in
+	   $XDG_RUNTIME_DIR/speech-dispatcher */
+	const char *user_runtime_dir;
+
+	user_runtime_dir = g_get_user_runtime_dir();
+
+	/* Setup a speechd-dispatcher directory or create a new one */
+	SpeechdOptions.runtime_speechd_dir =
+		g_strdup_printf("%s/speech-dispatcher", user_runtime_dir);
+	MSG(4, "Trying to find %s", SpeechdOptions.runtime_speechd_dir);
+	g_mkdir_with_parents(SpeechdOptions.runtime_speechd_dir,
+						 S_IRWXU);
+	MSG(4, "Using directory: %s for pidfile and logging",
+		SpeechdOptions.runtime_speechd_dir);
+	/* Pidfile */
+	if (SpeechdOptions.pid_file == NULL) {
+		/* If no pidfile path specified on command line, use default local dir */
+		SpeechdOptions.pid_file =
+			g_strdup_printf("%s/pid/speech-dispatcher.pid",
+							SpeechdOptions.runtime_speechd_dir);
+		g_mkdir(g_path_get_dirname(SpeechdOptions.pid_file),
+				S_IRWXU);
+	}
+}
+
+void speechd_init_conffile(void)
+{
+	/* By default, search for configuration options in
+	   $XDG_CONFIG_HOME/speech-dispatcher */
+	const char *user_config_dir;
+	char *test_speechd_conf_file = NULL;
+
+	user_config_dir = g_get_user_config_dir();
+	/* Config file */
+	if (SpeechdOptions.conf_dir == NULL) {
+		/* If no conf_dir was specified on command line, try default local config dir */
+		SpeechdOptions.conf_dir =
+			g_build_filename(user_config_dir,
+							 "speech-dispatcher", NULL);
+		test_speechd_conf_file =
+			g_build_filename(SpeechdOptions.conf_dir,
+							 "speechd.conf", NULL);
+		if (!g_file_test
+			    (test_speechd_conf_file, G_FILE_TEST_IS_REGULAR)) {
+			/* If the local configuration file doesn't exist, read the global configuration */
+			if (strcmp(SYS_CONF, ""))
+				SpeechdOptions.conf_dir =
+					g_strdup(SYS_CONF);
+			else
+				SpeechdOptions.conf_dir =
+					g_strdup("/etc/speech-dispatcher/");
+		}
+		g_free(test_speechd_conf_file);
+	}
+	SpeechdOptions.conf_file =
+		g_strdup_printf("%s/speechd.conf", SpeechdOptions.conf_dir);
+}
+
+void speechd_open_sockets(void)
+{
+	if (SpeechdOptions.communication_method == SPD_METHOD_INET_SOCKET) {
+		MSG(4, "Speech Dispatcher will use inet port %d",
+		    SpeechdOptions.port);
+		/* Connect and start listening on inet socket */
+		server_socket = make_inet_socket(SpeechdOptions.port);
+	} else if (SpeechdOptions.communication_method == SPD_METHOD_UNIX_SOCKET) {
+		/* Determine appropariate socket file name */
+		MSG(4, "Speech Dispatcher will use local unix socket: %s",
+		    SpeechdOptions.socket_path);
+		/* Delete an old socket file if it exists */
+		if (g_file_test(SpeechdOptions.socket_path, G_FILE_TEST_EXISTS))
+			if (g_unlink(SpeechdOptions.socket_path) == -1)
+				FATAL
+				("Local socket file exists but impossible to delete. Wrong permissions?");
+		/* Connect and start listening on local unix socket */
+		server_socket = make_local_socket(SpeechdOptions.socket_path);
+	} else {
+		FATAL("Unknown communication method");
+	}
+}
+
+void speechd_shutdown(void)
+{
+	int ret;
+	MSG(1, "Terminating...");
+
+	MSG(2, "Closing open connections...");
+	/* We will browse through all the connections and close them. */
+	g_hash_table_foreach_remove(fd_settings, speechd_client_terminate,
+								NULL);
+	g_hash_table_destroy(fd_settings);
+
+	MSG(4, "Closing speak() thread...");
+	ret = pthread_cancel(speak_thread);
+	if (ret != 0)
+		FATAL("Speak thread failed to cancel!\n");
+
+	ret = pthread_join(speak_thread, NULL);
+	if (ret != 0)
+		FATAL("Speak thread failed to join!\n");
+
+	MSG(2, "Closing open output modules...");
+	/*  Call the close() function of each registered output module. */
+	g_list_foreach(output_modules, speechd_modules_terminate, NULL);
+	g_list_free(output_modules);
+
+	MSG(2, "Closing server connection...");
+	if (close(server_socket) == -1)
+		MSG(2, "close() failed: %s", strerror(errno));
+
+	MSG(4, "Removing pid file");
+	destroy_pid_file();
+
+	fflush(NULL);
+
+	g_main_loop_unref(main_loop);
+	main_loop = NULL;
+
+	MSG(2, "Speech Dispatcher terminated correctly");
+}
+
 /* --- MAIN --- */
 
 int main(int argc, char *argv[])
@@ -997,57 +1120,8 @@ int main(int argc, char *argv[])
 
 	MSG(1, "Speech Dispatcher " VERSION " starting");
 
-	/* By default, search for configuration options in $XDG_CONFIG_HOME/speech-dispatcher
-	   and sockets and pid files in $XDG_RUNTIME_DIR/speech-dispatcher */
-	{
-		const char *user_runtime_dir;
-		const char *user_config_dir;
-		char *test_speechd_conf_file = NULL;
-
-		user_runtime_dir = g_get_user_runtime_dir();
-		user_config_dir = g_get_user_config_dir();
-
-		/* Setup a speechd-dispatcher directory or create a new one */
-		SpeechdOptions.runtime_speechd_dir =
-		    g_strdup_printf("%s/speech-dispatcher", user_runtime_dir);
-		MSG(4, "Trying to find %s", SpeechdOptions.runtime_speechd_dir);
-		g_mkdir_with_parents(SpeechdOptions.runtime_speechd_dir,
-				     S_IRWXU);
-		MSG(4, "Using directory: %s for pidfile and logging",
-		    SpeechdOptions.runtime_speechd_dir);
-		/* Pidfile */
-		if (SpeechdOptions.pid_file == NULL) {
-			/* If no pidfile path specified on command line, use default local dir */
-			SpeechdOptions.pid_file =
-			    g_strdup_printf("%s/pid/speech-dispatcher.pid",
-					    SpeechdOptions.runtime_speechd_dir);
-			g_mkdir(g_path_get_dirname(SpeechdOptions.pid_file),
-				S_IRWXU);
-		}
-		/* Config file */
-		if (SpeechdOptions.conf_dir == NULL) {
-			/* If no conf_dir was specified on command line, try default local config dir */
-			SpeechdOptions.conf_dir =
-			    g_build_filename(user_config_dir,
-					     "speech-dispatcher", NULL);
-			test_speechd_conf_file =
-			    g_build_filename(SpeechdOptions.conf_dir,
-					     "speechd.conf", NULL);
-			if (!g_file_test
-			    (test_speechd_conf_file, G_FILE_TEST_IS_REGULAR)) {
-				/* If the local configuration file doesn't exist, read the global configuration */
-				if (strcmp(SYS_CONF, ""))
-					SpeechdOptions.conf_dir =
-					    g_strdup(SYS_CONF);
-				else
-					SpeechdOptions.conf_dir =
-					    g_strdup("/etc/speech-dispatcher/");
-			}
-			g_free(test_speechd_conf_file);
-		}
-		SpeechdOptions.conf_file =
-		    g_strdup_printf("%s/speechd.conf", SpeechdOptions.conf_dir);
-	}
+	speechd_init_pidfile();
+	speechd_init_conffile();
 
 	/* Check for PID file or create a new one or exit if Speech Dispatcher
 	   is already running */
@@ -1084,6 +1158,7 @@ int main(int argc, char *argv[])
 	}
 
 	/* Initialize logging mutex to workaround ctime threading bug */
+
 	/* Must be done no later than here */
 	ret = pthread_mutex_init(&logging_mutex, NULL);
 	if (ret != 0) {
@@ -1169,25 +1244,7 @@ int main(int argc, char *argv[])
 		g_free(spawn_socket_path);
 	}
 
-	if (SpeechdOptions.communication_method == SPD_METHOD_INET_SOCKET) {
-		MSG(4, "Speech Dispatcher will use inet port %d",
-		    SpeechdOptions.port);
-		/* Connect and start listening on inet socket */
-		server_socket = make_inet_socket(SpeechdOptions.port);
-	} else if (SpeechdOptions.communication_method == SPD_METHOD_UNIX_SOCKET) {
-		/* Determine appropariate socket file name */
-		MSG(4, "Speech Dispatcher will use local unix socket: %s",
-		    SpeechdOptions.socket_path);
-		/* Delete an old socket file if it exists */
-		if (g_file_test(SpeechdOptions.socket_path, G_FILE_TEST_EXISTS))
-			if (g_unlink(SpeechdOptions.socket_path) == -1)
-				FATAL
-				    ("Local socket file exists but impossible to delete. Wrong permissions?");
-		/* Connect and start listening on local unix socket */
-		server_socket = make_local_socket(SpeechdOptions.socket_path);
-	} else {
-		FATAL("Unknown communication method");
-	}
+	speechd_open_sockets();
 
 	/* Fork, set uid, chdir, etc. */
 	if (spd_mode == SPD_MODE_DAEMON) {
@@ -1225,41 +1282,7 @@ int main(int argc, char *argv[])
 
 	g_main_loop_run(main_loop);
 
-	MSG(1, "Terminating...");
-
-	MSG(2, "Closing open connections...");
-	/* We will browse through all the connections and close them. */
-	g_hash_table_foreach_remove(fd_settings, speechd_client_terminate,
-				    NULL);
-	g_hash_table_destroy(fd_settings);
-
-	MSG(4, "Closing speak() thread...");
-	ret = pthread_cancel(speak_thread);
-	if (ret != 0)
-		FATAL("Speak thread failed to cancel!\n");
-
-	ret = pthread_join(speak_thread, NULL);
-	if (ret != 0)
-		FATAL("Speak thread failed to join!\n");
-
-	MSG(2, "Closing open output modules...");
-	/*  Call the close() function of each registered output module. */
-	g_list_foreach(output_modules, speechd_modules_terminate, NULL);
-	g_list_free(output_modules);
-
-	MSG(2, "Closing server connection...");
-	if (close(server_socket) == -1)
-		MSG(2, "close() failed: %s", strerror(errno));
-
-	MSG(4, "Removing pid file");
-	destroy_pid_file();
-
-	fflush(NULL);
-
-	g_main_loop_unref(main_loop);
-	main_loop = NULL;
-
-	MSG(2, "Speech Dispatcher terminated correctly");
+	speechd_shutdown();
 
 	exit(0);
 }
