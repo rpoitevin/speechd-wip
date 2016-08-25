@@ -34,9 +34,6 @@
 
 #include "speechd.h"
 
-/* Declare dotconf functions and data structures*/
-#include "configuration.h"
-
 /* Declare functions to allocate and create important data
  * structures */
 #include "alloc.h"
@@ -77,6 +74,7 @@ static gboolean client_process_incoming (gint          fd,
 				  gpointer      data);
 
 void check_client_count(void);
+void speechd_open_sockets(void);
 
 #ifdef __SUNPRO_C
 /* Added by Willie Walker - daemon is a gcc-ism
@@ -672,6 +670,68 @@ void speechd_init()
 	last_p5_block = NULL;
 }
 
+static void
+spd_update_log_level(GSettings *settings,
+					 gchar *key,
+					 gpointer user_data)
+{
+	SpeechdOptions.log_level = g_settings_get_uint (settings, "log-level");
+	MSG(0, "log level changing to %d", SpeechdOptions.log_level);
+}
+
+void load_default_global_set_options()
+{
+	spd_settings = g_settings_new ("org.freebsoft.speechd.server");
+	GlobalFDSet.priority = g_settings_get_enum (spd_settings, "default-priority");
+	GlobalFDSet.msg_settings.punctuation_mode = g_settings_get_enum (spd_settings, "default-punctuation-mode");
+	GlobalFDSet.msg_settings.spelling_mode = g_settings_get_boolean (spd_settings, "default-spelling");
+	GlobalFDSet.msg_settings.rate = g_settings_get_int (spd_settings, "default-rate");
+	GlobalFDSet.msg_settings.pitch = g_settings_get_int (spd_settings, "default-pitch");
+	GlobalFDSet.msg_settings.pitch_range = g_settings_get_int (spd_settings, "default-pitch-range");
+	GlobalFDSet.msg_settings.volume = g_settings_get_int (spd_settings, "default-volume");
+	GlobalFDSet.client_name = g_settings_get_string (spd_settings, "default-client-name");
+
+	GlobalFDSet.msg_settings.voice.language = g_settings_get_string (spd_settings, "default-language");
+	GlobalFDSet.output_module = g_settings_get_string (spd_settings, "default-module");
+	GlobalFDSet.msg_settings.voice_type = g_settings_get_enum (spd_settings, "default-voice-type");
+	GlobalFDSet.msg_settings.cap_let_recogn = g_settings_get_enum (spd_settings, "default-capital-letter-recognition");
+	GlobalFDSet.min_delay_progress = 2000;
+	GlobalFDSet.pause_context = g_settings_get_uint (spd_settings, "default-pause-context");
+	GlobalFDSet.ssml_mode = SPD_DATA_TEXT;
+	GlobalFDSet.notification = 0;
+
+	GlobalFDSet.audio_output_method = g_settings_get_string (spd_settings, "audio-output-method");
+	GlobalFDSet.audio_oss_device = g_settings_get_string (spd_settings, "audio-oss-device");
+	GlobalFDSet.audio_alsa_device = g_settings_get_string (spd_settings, "audio-alsa-device");
+	GlobalFDSet.audio_nas_server = g_settings_get_string (spd_settings, "audio-nas-server");
+	GlobalFDSet.audio_pulse_server = g_settings_get_string (spd_settings, "audio-pulse-server");
+	GlobalFDSet.audio_pulse_min_length = g_settings_get_uint (spd_settings, "audio-pulse-min-length");
+
+	SpeechdOptions.max_history_messages = 10000;
+
+	/* Options which are accessible from command line must be handled
+	   specially to make sure we don't overwrite them */
+	if (!SpeechdOptions.log_level_set) {
+		if (!SpeechdOptions.debug) /* Only watch for change if not debugging */
+			g_signal_connect (spd_settings, "changed::log-level",
+							  G_CALLBACK(spd_update_log_level), NULL);
+		spd_update_log_level (spd_settings, NULL, NULL);
+	}
+	if (!SpeechdOptions.communication_method_set)
+		SpeechdOptions.communication_method = g_settings_get_enum (spd_settings, "communication-method");
+	if (!SpeechdOptions.socket_path_set)
+		SpeechdOptions.socket_path = g_settings_get_string (spd_settings, "socket-path");
+	if (!SpeechdOptions.port_set)
+		SpeechdOptions.port = g_settings_get_uint (spd_settings, "port");
+	if (!SpeechdOptions.localhost_access_only_set)
+		SpeechdOptions.localhost_access_only = g_settings_get_boolean (spd_settings, "localhost-access-only");
+	if (!SpeechdOptions.server_timeout_set)
+		SpeechdOptions.server_timeout = g_settings_get_uint (spd_settings, "timeout");
+
+	logfile = stderr;
+	custom_logfile = NULL;
+}
+
 static gboolean speechd_load_configuration(gpointer user_data)
 {
 	GList *detected_modules = NULL;
@@ -848,17 +908,17 @@ int make_local_socket(const char *filename)
 int make_inet_socket(const int port)
 {
 	struct sockaddr_in server_address;
-	int server_socket;
+	int sock;
 
 	/* Create an inet socket */
-	server_socket = socket(AF_INET, SOCK_STREAM, 0);
-	if (server_socket < 0) {
+	sock = socket(AF_INET, SOCK_STREAM, 0);
+	if (sock < 0) {
 		FATAL("Can't create inet socket");
 	}
 
 	/* Set REUSEADDR flag */
 	const int flag = 1;
-	if (setsockopt(server_socket, SOL_SOCKET, SO_REUSEADDR, &flag,
+	if (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &flag,
 		       sizeof(int)))
 		MSG(2, "Error: Setting socket option failed!");
 
@@ -874,19 +934,19 @@ int make_inet_socket(const int port)
 	server_address.sin_port = htons(port);
 
 	MSG(4, "Openning inet socket connection");
-	if (bind(server_socket, (struct sockaddr *)&server_address,
+	if (bind(sock, (struct sockaddr *)&server_address,
 		 sizeof(server_address)) == -1) {
 		MSG(-1, "bind() failed: %s", strerror(errno));
 		FATAL("Couldn't open inet socket, try a few minutes later.");
 	}
 
-	if (listen(server_socket, 50) == -1) {
+	if (listen(sock, 50) == -1) {
 		MSG(2, "ERRNO:%s", strerror(errno));
 		FATAL
 		    ("listen() failed for inet socket, another Speech Dispatcher running?");
 	}
 
-	return server_socket;
+	return sock;
 }
 
 gboolean server_process_incoming (gint          fd,
@@ -1273,7 +1333,7 @@ int main(int argc, char *argv[])
 	SpeechdStatus.max_fd = server_socket;
 
 	g_unix_fd_add(server_socket, G_IO_IN,
-		      server_process_incoming, NULL);
+				  server_process_incoming, NULL);
 
 	/* Now wait for clients and requests. */
 	MSG(1, "Speech Dispatcher started and waiting for clients ...");
