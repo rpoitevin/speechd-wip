@@ -669,6 +669,17 @@ void speechd_init()
 }
 
 static void
+spd_update_default_spelling(GSettings *settings,
+						    gchar *key,
+						    gpointer user_data) 
+{
+	gboolean spelling = g_settings_get_boolean (spd_settings, "default-spelling");
+	if (GlobalFDSet.msg_settings.spelling_mode != spelling) {
+		GlobalFDSet.msg_settings.spelling_mode = spelling;
+	}
+}
+
+static void
 spd_update_log_level(GSettings *settings,
 					 gchar *key,
 					 gpointer user_data)
@@ -683,11 +694,80 @@ spd_update_output_module(GSettings *settings,
 						 gpointer user_data)
 {
 	gchar *module = g_settings_get_string (settings, "default-module");
-	MSG(0, "*** changing output module to %s", module);
 	if (GlobalFDSet.output_module == NULL || 
 			strcmp(module, GlobalFDSet.output_module) != 0) {
 		g_free (GlobalFDSet.output_module);
 		GlobalFDSet.output_module = module;
+	}
+}
+
+static void
+spd_update_default_rate(GSettings *settings,
+						gchar *key,
+						gpointer user_data)
+{
+	int rate = g_settings_get_int (settings, "default-rate");
+	if (GlobalFDSet.msg_settings.rate != rate) {
+		GlobalFDSet.msg_settings.rate = rate;
+	}
+}
+
+static void
+spd_update_default_pitch(GSettings *settings,
+						 gchar *key,
+						 gpointer user_data)
+{
+	int pitch = g_settings_get_int (settings, "default-pitch");
+	if (GlobalFDSet.msg_settings.pitch != pitch) {
+		GlobalFDSet.msg_settings.pitch = pitch;
+	}
+}
+
+static void
+spd_update_default_pitch_range(GSettings *settings,
+							   gchar *key,
+							   gpointer user_data)
+{
+	int pitch_range = g_settings_get_int (settings, "default-pitch-range");
+	if (GlobalFDSet.msg_settings.pitch_range != pitch_range) {
+		GlobalFDSet.msg_settings.pitch_range = pitch_range;
+	}
+}
+
+static void
+spd_update_default_volume(GSettings *settings,
+						  gchar *key,
+						  gpointer user_data)
+{
+	int volume = g_settings_get_int (settings, "default-volume");
+	if (GlobalFDSet.msg_settings.volume != volume) {
+		GlobalFDSet.msg_settings.volume = volume;
+	}
+}
+
+static void
+spd_update_default_client_name(GSettings *settings,
+							   gchar *key,
+							   gpointer user_data)
+{
+	gchar *client_name = g_settings_get_string (settings, "default-client-name");
+	if (GlobalFDSet.client_name == NULL || 
+			strcmp(client_name, GlobalFDSet.client_name) != 0) {
+		g_free (GlobalFDSet.client_name);
+		GlobalFDSet.client_name = client_name;
+	}
+}
+
+static void
+spd_update_default_language(GSettings *settings,
+							gchar *key,
+							gpointer user_data)
+{
+	gchar *language = g_settings_get_string (settings, "default-language");
+	if (GlobalFDSet.msg_settings.voice.language == NULL || 
+			strcmp(language, GlobalFDSet.msg_settings.voice.language) != 0) {
+		g_free (GlobalFDSet.msg_settings.voice.language);
+		GlobalFDSet.msg_settings.voice.language = language;
 	}
 }
 
@@ -696,14 +776,30 @@ void load_default_global_set_options()
 	spd_settings = g_settings_new ("org.freebsoft.speechd.server");
 	GlobalFDSet.priority = g_settings_get_enum (spd_settings, "default-priority");
 	GlobalFDSet.msg_settings.punctuation_mode = g_settings_get_enum (spd_settings, "default-punctuation-mode");
-	GlobalFDSet.msg_settings.spelling_mode = g_settings_get_boolean (spd_settings, "default-spelling");
-	GlobalFDSet.msg_settings.rate = g_settings_get_int (spd_settings, "default-rate");
-	GlobalFDSet.msg_settings.pitch = g_settings_get_int (spd_settings, "default-pitch");
-	GlobalFDSet.msg_settings.pitch_range = g_settings_get_int (spd_settings, "default-pitch-range");
-	GlobalFDSet.msg_settings.volume = g_settings_get_int (spd_settings, "default-volume");
-	GlobalFDSet.client_name = g_settings_get_string (spd_settings, "default-client-name");
+	g_signal_connect (spd_settings, "changed::default-spelling",
+					  G_CALLBACK(spd_update_default_spelling), NULL);
+	spd_update_default_spelling (spd_settings, NULL, NULL);
+	g_signal_connect (spd_settings, "changed::default-rate",
+					  G_CALLBACK(spd_update_default_rate), NULL);
+	spd_update_default_rate (spd_settings, NULL, NULL);
+	g_signal_connect (spd_settings, "changed::default-pitch",
+					  G_CALLBACK(spd_update_default_pitch), NULL);
+	spd_update_default_pitch (spd_settings, NULL, NULL);
+	g_signal_connect (spd_settings, "changed::default-pitch-range",
+					  G_CALLBACK(spd_update_default_pitch_range), NULL);
+	spd_update_default_pitch_range(spd_settings, NULL, NULL);
+	g_signal_connect (spd_settings, "changed::default-volume",
+					  G_CALLBACK(spd_update_default_volume), NULL);
+	spd_update_default_volume(spd_settings, NULL, NULL);
+	GlobalFDSet.client_name = NULL;
+	g_signal_connect (spd_settings, "changed::default-client-name",
+					  G_CALLBACK(spd_update_default_client_name), NULL);
+	spd_update_default_client_name(spd_settings, NULL, NULL);
 
-	GlobalFDSet.msg_settings.voice.language = g_settings_get_string (spd_settings, "default-language");
+	GlobalFDSet.msg_settings.voice.language = NULL;
+	g_signal_connect (spd_settings, "changed::default-language",
+					  G_CALLBACK(spd_update_default_language), NULL);
+	spd_update_default_language(spd_settings, NULL, NULL);
 	GlobalFDSet.output_module = NULL;
 	g_signal_connect (spd_settings, "changed::default-module",
 					  G_CALLBACK(spd_update_output_module), NULL);
