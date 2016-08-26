@@ -818,6 +818,9 @@ spd_update_capital_letter_recognition(GSettings *settings,
 
 void load_default_global_set_options()
 {
+	gchar **modules;
+	gchar **iter;
+
 	spd_settings = g_settings_new ("org.freebsoft.speechd.server");
 	GlobalFDSet.priority = g_settings_get_enum (spd_settings, "default-priority");
 	g_signal_connect (spd_settings, "changed::default-punctuation-mode",
@@ -885,7 +888,18 @@ void load_default_global_set_options()
 							  G_CALLBACK(spd_update_timeout), NULL);
 		spd_update_timeout (spd_settings, NULL, NULL);
 	}
-	
+
+	/* Get the list of enabled modules and add them to the list of modules to load */
+	modules = g_settings_get_strv (spd_settings, "enabled-modules");
+	for (iter = modules; *iter; iter++) {
+		/* Split the module by : to get name, binary, and config file */
+		gchar **split = g_strsplit (*iter, ":", -1);
+		module_add_load_request (split[0], split[1], split[2], NULL);
+		/* Note we aren't freeing split since module_add_load_request takes
+		 ownership */
+	}
+	g_free (modules);
+
 	/* The rest of these options we don't react to changes in dynamically */
 	if (!SpeechdOptions.communication_method_set)
 		SpeechdOptions.communication_method = g_settings_get_enum (spd_settings, "communication-method");
