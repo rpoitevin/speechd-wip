@@ -73,7 +73,7 @@
       <default>'default'</default>
     </key>
 
-    <key name='port' type='i'>
+    <key name='port' type='u'>
       <_summary>Port for inet socket communication</_summary>
       <_description>
         The Port on which Speech Dispatcher should be available to clients if the "inet_socket"
