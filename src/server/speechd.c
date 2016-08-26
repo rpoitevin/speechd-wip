@@ -673,7 +673,7 @@ spd_update_default_spelling(GSettings *settings,
 						    gchar *key,
 						    gpointer user_data) 
 {
-	gboolean spelling = g_settings_get_boolean (spd_settings, "default-spelling");
+	gboolean spelling = g_settings_get_boolean (settings, "default-spelling");
 	if (GlobalFDSet.msg_settings.spelling_mode != spelling) {
 		GlobalFDSet.msg_settings.spelling_mode = spelling;
 	}
@@ -771,11 +771,58 @@ spd_update_default_language(GSettings *settings,
 	}
 }
 
+static void
+spd_update_punctuation_mode(GSettings *settings,
+							gchar *key,
+							gpointer user_data)
+{
+	SPDPunctuation punctuation = g_settings_get_enum (settings, "default-punctuation-mode");
+	if (punctuation != GlobalFDSet.msg_settings.punctuation_mode) {
+		GlobalFDSet.msg_settings.punctuation_mode = punctuation;
+	}
+}
+
+static void
+spd_update_timeout(GSettings *settings,
+				   gchar *key,
+				   gpointer user_data)
+{
+	uint timeout = g_settings_get_uint (spd_settings, "timeout");
+	if (timeout != SpeechdOptions.server_timeout) {
+		SpeechdOptions.server_timeout = timeout;
+		check_client_count();
+	}
+}
+
+static void
+spd_update_default_voice_type(GSettings *settings,
+							  gchar *key,
+							  gpointer user_data)
+{
+	SPDVoiceType type = g_settings_get_enum (settings, "default-voice-type");
+	if (type != GlobalFDSet.msg_settings.voice_type) {
+		GlobalFDSet.msg_settings.voice_type = type;
+	}
+}
+
+static void
+spd_update_capital_letter_recognition(GSettings *settings,
+									  gchar *key,
+									  gpointer user_dat)
+{
+	SPDCapitalLetters caps = g_settings_get_enum (settings, "default-capital-letter-recognition");
+	if (caps != GlobalFDSet.msg_settings.cap_let_recogn) {
+		GlobalFDSet.msg_settings.cap_let_recogn = caps;
+	}
+}
+
 void load_default_global_set_options()
 {
 	spd_settings = g_settings_new ("org.freebsoft.speechd.server");
 	GlobalFDSet.priority = g_settings_get_enum (spd_settings, "default-priority");
-	GlobalFDSet.msg_settings.punctuation_mode = g_settings_get_enum (spd_settings, "default-punctuation-mode");
+	g_signal_connect (spd_settings, "changed::default-punctuation-mode",
+					  G_CALLBACK(spd_update_punctuation_mode), NULL);
+	spd_update_punctuation_mode (spd_settings, NULL, NULL);
 	g_signal_connect (spd_settings, "changed::default-spelling",
 					  G_CALLBACK(spd_update_default_spelling), NULL);
 	spd_update_default_spelling (spd_settings, NULL, NULL);
@@ -804,8 +851,12 @@ void load_default_global_set_options()
 	g_signal_connect (spd_settings, "changed::default-module",
 					  G_CALLBACK(spd_update_output_module), NULL);
 	spd_update_output_module (spd_settings, NULL, NULL);
-	GlobalFDSet.msg_settings.voice_type = g_settings_get_enum (spd_settings, "default-voice-type");
-	GlobalFDSet.msg_settings.cap_let_recogn = g_settings_get_enum (spd_settings, "default-capital-letter-recognition");
+	g_signal_connect (spd_settings, "changed::default-voice-type",
+					  G_CALLBACK(spd_update_default_voice_type), NULL);
+	spd_update_default_voice_type (spd_settings, NULL, NULL);
+	g_signal_connect (spd_settings, "changed::default-capital-letter-recognition",
+					  G_CALLBACK(spd_update_capital_letter_recognition), NULL);
+	spd_update_capital_letter_recognition (spd_settings, NULL, NULL);
 	GlobalFDSet.min_delay_progress = 2000;
 	GlobalFDSet.pause_context = g_settings_get_uint (spd_settings, "default-pause-context");
 	GlobalFDSet.ssml_mode = SPD_DATA_TEXT;
@@ -828,6 +879,14 @@ void load_default_global_set_options()
 							  G_CALLBACK(spd_update_log_level), NULL);
 		spd_update_log_level (spd_settings, NULL, NULL);
 	}
+	if (!SpeechdOptions.server_timeout_set) {
+		if (!SpeechdOptions.debug) /* ONly watch for change if not debugging */
+			g_signal_connect (spd_settings, "changed::timeout",
+							  G_CALLBACK(spd_update_timeout), NULL);
+		spd_update_timeout (spd_settings, NULL, NULL);
+	}
+	
+	/* The rest of these options we don't react to changes in dynamically */
 	if (!SpeechdOptions.communication_method_set)
 		SpeechdOptions.communication_method = g_settings_get_enum (spd_settings, "communication-method");
 	if (!SpeechdOptions.socket_path_set)
@@ -836,8 +895,6 @@ void load_default_global_set_options()
 		SpeechdOptions.port = g_settings_get_uint (spd_settings, "port");
 	if (!SpeechdOptions.localhost_access_only_set)
 		SpeechdOptions.localhost_access_only = g_settings_get_boolean (spd_settings, "localhost-access-only");
-	if (!SpeechdOptions.server_timeout_set)
-		SpeechdOptions.server_timeout = g_settings_get_uint (spd_settings, "timeout");
 
 	logfile = stderr;
 	custom_logfile = NULL;
