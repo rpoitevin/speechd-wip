@@ -77,10 +77,9 @@ void check_client_count(void);
 void speechd_open_sockets(void);
 
 #ifdef __SUNPRO_C
-/* Added by Willie Walker - daemon is a gcc-ism
- */
 #include <sys/filio.h>
-static int daemon(int nochdir, int noclose)
+#endif
+static int speechd_daemon(int nochdir, int noclose)
 {
 	int fd, i;
 
@@ -113,7 +112,6 @@ static int daemon(int nochdir, int noclose)
 	}
 	return 0;
 }
-#endif /* __SUNPRO_C */
 
 char *spd_get_path(char *filename, char *startdir)
 {
@@ -679,6 +677,20 @@ spd_update_log_level(GSettings *settings,
 	MSG(0, "log level changing to %d", SpeechdOptions.log_level);
 }
 
+static void
+spd_update_output_module(GSettings *settings,
+						 gchar *key,
+						 gpointer user_data)
+{
+	gchar *module = g_settings_get_string (settings, "default-module");
+	MSG(0, "*** changing output module to %s", module);
+	if (GlobalFDSet.output_module == NULL || 
+			strcmp(module, GlobalFDSet.output_module) != 0) {
+		g_free (GlobalFDSet.output_module);
+		GlobalFDSet.output_module = module;
+	}
+}
+
 void load_default_global_set_options()
 {
 	spd_settings = g_settings_new ("org.freebsoft.speechd.server");
@@ -692,7 +704,10 @@ void load_default_global_set_options()
 	GlobalFDSet.client_name = g_settings_get_string (spd_settings, "default-client-name");
 
 	GlobalFDSet.msg_settings.voice.language = g_settings_get_string (spd_settings, "default-language");
-	GlobalFDSet.output_module = g_settings_get_string (spd_settings, "default-module");
+	GlobalFDSet.output_module = NULL;
+	g_signal_connect (spd_settings, "changed::default-module",
+					  G_CALLBACK(spd_update_output_module), NULL);
+	spd_update_output_module (spd_settings, NULL, NULL);
 	GlobalFDSet.msg_settings.voice_type = g_settings_get_enum (spd_settings, "default-voice-type");
 	GlobalFDSet.msg_settings.cap_let_recogn = g_settings_get_enum (spd_settings, "default-capital-letter-recognition");
 	GlobalFDSet.min_delay_progress = 2000;
@@ -1157,6 +1172,17 @@ int main(int argc, char *argv[])
 
 	options_parse(argc, argv);
 
+	/* Fork, set uid, chdir, etc. */
+	if (spd_mode == SPD_MODE_DAEMON) {
+		if (speechd_daemon(0, 0)) {
+			FATAL("Can't fork child process");
+		}
+		/* Re-create the pid file under this process */
+		/* unlink(SpeechdOptions.pid_file);
+		if (create_pid_file() == -1)
+			return -1; */
+	}
+
 	if (SpeechdOptions.spawn) {
 		/* In case of --spawn, copy the host port and socket_path
 		   parameters into temporary spawn_ variables for later comparison
@@ -1305,17 +1331,6 @@ int main(int argc, char *argv[])
 	}
 
 	speechd_open_sockets();
-
-	/* Fork, set uid, chdir, etc. */
-	if (spd_mode == SPD_MODE_DAEMON) {
-		if (daemon(0, 0)) {
-			FATAL("Can't fork child process");
-		}
-		/* Re-create the pid file under this process */
-		unlink(SpeechdOptions.pid_file);
-		if (create_pid_file() == -1)
-			return -1;
-	}
 
 	/* Set up the main loop and register signals */
         main_loop = g_main_loop_new(g_main_context_default(), FALSE);
