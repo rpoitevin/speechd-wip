@@ -895,8 +895,7 @@ void load_default_global_set_options()
 		/* Split the module by : to get name, binary, and config file */
 		gchar **split = g_strsplit (*iter, ":", -1);
 		module_add_load_request (split[0], split[1], split[2], NULL);
-		/* Note we aren't freeing split since module_add_load_request takes
-		 ownership */
+		g_free(split);
 	}
 	g_free (modules);
 
