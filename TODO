@@ -34,6 +34,30 @@ Migrate to GSettings
  * Listen to GSettings changes.
  * Migrate synthesizer modules to GSettings.
  * Write a program to migrate user settings to GSettings.
+ * Write a configuration tool so that users can change speechd settings other than via the gsettings command-line.
+
+The configuration tool needs a way to discover available modules, particularly since there is a desire to support 3rd-party modules in the future, and this has to work accross the various next generation packaging/environment sandboxing systems, i.e snappy and flatpack. Exactly how 3rd-party modules will work when confined in these systems is to be worked out later, but we should try and work out the best solution for module discovery now, so that the amount of work to allow the configuration tool to find sandboxed 3rd-party modules in the future is minimal.
+
+ * Modules need to be discoverable via GSettings. The GSettings key should probably be an array of strings, with each string pointing to a metadata file that provides information about the module. The metadata file will be in GLib's key file format, i.e ini-like, something like the following.
+
+[general]
+name=ESpeak
+description=The ESpeak Speech Synthesizer
+module-binary=/path/to/binary (May change later when 3rd-party module support/out of tree module building is developed.)
+confinement=snap/flatpack (again once support for these systems is added, but planning ahead.)
+schemas=com.example.synth:com.example.synth.something
+relocatable-schemas=com.example.synth.something-else:com.example.synth.user-specific
+
+[com.example.synth.something-else]
+schema-path-template=/com/example/synth/language/%s
+template-key=com.example.synth:languages
+...
+
+The above should be explanetory, except maybe for template-key. I couldn't think of a better term, but it points to the key where relevant information is stored to be substituted in the schema path template string.
+
+The config tool would use the GSettingsSchema API to walk the schemas, extracting text for the summary and description, which would be shown in the UI. The value type can then be used as a hint as to the type of data that the user is expected to enter. Unfortunately I haven't yet determined the best way to show enum values.
+
+The above could also be extended to provide hints as to how to show the data from a particular relocatable schema, i.e table form, list form, etc.
 
 
 Synthesizer specific settings API
