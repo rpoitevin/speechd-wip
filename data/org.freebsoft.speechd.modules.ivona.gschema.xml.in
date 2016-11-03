@@ -1,16 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <schemalist gettext-domain="speech-dispatcher">
-  <schema path='/org/freebsoft/speechd/modules/ivona/' id='org.freebsoft.speechd.modules.ivona'>
+  <schema path="/org/freebsoft/speechd/modules/ivona/" id="org.freebsoft.speechd.modules.ivona">
 
-    <key name='server-host' type='s'>
+    <key name="server-host" type="s">
       <_summary>Server Host</_summary>
       <_description>
         The host name or ip address of the Ivona server.
       </_description>
-      <default>'127.0.0.1'</default>
+      <default>"127.0.0.1"</default>
     </key>
 
-    <key name='server-port' type='u'>
+    <key name="server-port" type="u">
       <_summary>Server Port</_summary>
       <_description>
         The port of the Ivona server.
@@ -18,7 +18,7 @@
       <default>9123</default>
     </key>
 
-    <key name='sample-frequency' type='u'>
+    <key name="sample-frequency" type="u">
       <_summary>Sample Frequency</_summary>
       <_description>
         Sample frequency to use with Ivona.
@@ -27,7 +27,7 @@
     </key>
 
     <!-- maybe we should change this to an enumeration? -->
-    <key name='min-cap-let' type='i'>
+    <key name="min-cap-let" type="i">
       <_summary>Min Cap Let</_summary>
       <_description>
         IvonaMinCapLet overrides DefaultCapLetRecognition.  Set to:
@@ -37,48 +37,48 @@
       <default>1</default>
     </key>
 
-    <key name='sound-icon-path' type='s'>
+    <key name="sound-icon-path" type="s">
       <_summary>Sound Icon Path</_summary>
       <_description>
         The path for sound icons.
       </_description>
-      <default>'/usr/share/sounds/sound-icons-0.1/'</default>
+      <default>"/usr/share/sounds/sound-icons-0.1/"</default>
     </key>
 
-    <key name='speaker-name' type='s'>
+    <key name="speaker-name" type="s">
       <_summary>Speaker Name</_summary>
       <_description>
         Ivona Speaker (depends on Ivona version)
         Jacek or Ewa for pl, Jennifer for en, Carmen for ro
       </_description>
-      <default>'Jacek'</default>
+      <default>"Jacek"</default>
     </key>
 
-    <key name='speaker-language' type='s'>
+    <key name="speaker-language" type="s">
       <_summary>Speaker Language</_summary>
       <_description>
         Ivona Language.
       </_description>
-      <default>'pl'</default>
+      <default>"pl"</default>
     </key>
 
-    <key name='delimiters' type='s'>
+    <key name="delimiters" type="s">
       <_summary>Delimiters</_summary>
       <_description>
         Delimiters for message splitting. Do not change if not sure!
       </_description>
-      <default>'.;:,!?'</default>
+      <default>".;:,!?"</default>
     </key>
 
-    <key name='punctuation-some' type='s'>
+    <key name="punctuation-some" type="s">
       <_summary>Punctiation for Some</_summary>
       <_description>
         Punctuation for "some"
       </_description>
-      <default>'()'</default>
+      <default>"()"</default>
     </key>
 
-    <key name='debug' type='b'>
+    <key name="debug" type="b">
       <_summary>Debug</_summary>
       <_description>
         Whether debugging is enabled in the ivona output module or not.
@@ -86,14 +86,14 @@
       <default>false</default>
     </key>
 
-    <key name='debug-file' type='s'>
+    <key name="debug-file" type="s">
       <_summary>Debug File</_summary>
       <_description>
         debug-file specifies the file where the debugging information
         should be stored (note that the log is overwritten each time
         the module starts)
       </_description>
-      <default>'/tmp/debug-flite'</default>
+      <default>"/tmp/debug-flite"</default>
     </key>
   </schema>
 </schemalist>

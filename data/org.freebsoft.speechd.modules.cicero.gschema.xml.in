@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <schemalist gettext-domain="speech-dispatcher">
-  <schema path='/org/freebsoft/speechd/modules/cicero/' id='org.freebsoft.speechd.modules.cicero'>
+  <schema path="/org/freebsoft/speechd/modules/cicero/" id="org.freebsoft.speechd.modules.cicero">
 
     <!-- CICERO EXECUTABLE AND LOG -->
 
-    <key name='executable' type='s'>
+    <key name="executable" type="s">
       <_summary>Executable</_summary>
       <_description>
         Executable indicates path to the cicero executable (the file called
@@ -13,11 +13,11 @@
         probably better in /usr/local/bin/cicero and modify the below option
         accordingly.
       </_description>
-      <default>'/usr/bin/cicero'</default>
+      <default>"/usr/bin/cicero"</default>
     </key>
 
 
-    <key name='executable-log' type='s'>
+    <key name="executable-log" type="s">
       <_summary>Executable Log</_summary>
       <_description>
         executable-log is the path where logging information of the
@@ -25,12 +25,12 @@
         This should not be confused with the logging of this module/driver
         specified in speechd.conf.
       </_description>
-      <default>'/var/log/speech-dispatcher/cicero-executable.log'</default>
+      <default>"/var/log/speech-dispatcher/cicero-executable.log"</default>
     </key>
 
     <!-- DEBUGING AND LOGING -->
 
-    <key name='debug' type='b'>
+    <key name="debug" type="b">
       <_summary>Debug</_summary>
       <_description>
         Whether debugging is enabled in the cicero output module or not.

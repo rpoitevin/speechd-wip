@@ -1,20 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
 <schemalist gettext-domain="speech-dispatcher">
 
-  <schema path='/org/freebsoft/speechd/modules/festival/' id='org.freebsoft.speechd.modules.festival'>
+  <schema path="/org/freebsoft/speechd/modules/festival/" id="org.freebsoft.speechd.modules.festival">
 
     <!-- FESTIVAL SERVER SETTINGS -->
 
-    <key name='server-host' type='s'>
+    <key name="server-host" type="s">
       <_summary>Festival Server Host</_summary>
       <_description>
         Address where the Festival server runs (you have to
         have a Festival server running, please see documentation).
       </_description>
-      <default>'localhost'</default>
+      <default>"localhost"</default>
     </key>
 
-    <key name='server-port' type='u'>
+    <key name="server-port" type="u">
       <_summary>Festival Server Port</_summary>
       <_description>
         The port where the Festival server is listening.
@@ -24,7 +24,7 @@
 
     <!-- CACHING -->
 
-    <key name='cache-on' type='b'>
+    <key name="cache-on" type="b">
       <_summary>Cache On</_summary>
       <_description>
         Festival output module supports a caching mechanism for
@@ -40,7 +40,7 @@
       <default>true</default>
     </key>
 
-    <key name='cache-max-kbytes' type='u'>
+    <key name="cache-max-kbytes" type="u">
       <_summary>Cache Max KBytes</_summary>
       <_description>
         How large should the memmory assigned to output module for
@@ -56,13 +56,13 @@
       <default>10240</default>
     </key>
 
-    <key name='cache-distinguish-voices' type='b'>
+    <key name="cache-distinguish-voices" type="b">
       <_summary>Cache Distinguish Voices</_summary>
       <_description>
         Normally, the cache pool is common for all voices, rates and
-        pitches. This means that when for example the key 'r' gets cached,
-        you change the voice and request the key 'r' again, it will be
-        retrieved from the cache and you will hear the old 'r' instead of a
+        pitches. This means that when for example the key "r" gets cached,
+        you change the voice and request the key "r" again, it will be
+        retrieved from the cache and you will hear the old "r" instead of a
         new one. By default, it only switches between languages.  In most
         cases, this isn't a problem for characters, keys and sound icons and
         it saves system resources. But if you want to keep separate caches
@@ -72,13 +72,13 @@
       <default>false</default>
     </key>
 
-    <key name='cache-distinguish-rate' type='b'>
+    <key name="cache-distinguish-rate" type="b">
       <_summary>Cache Distinguish Rate</_summary>
       <_description>
         Normally, the cache pool is common for all voices, rates and
-        pitches. This means that when for example the key 'r' gets cached,
-        you change the voice and request the key 'r' again, it will be
-        retrieved from the cache and you will hear the old 'r' instead of a
+        pitches. This means that when for example the key "r" gets cached,
+        you change the voice and request the key "r" again, it will be
+        retrieved from the cache and you will hear the old "r" instead of a
         new one. By default, it only switches between languages.  In most
         cases, this isn't a problem for characters, keys and sound icons and
         it saves system resources. But if you want to keep separate caches
@@ -88,13 +88,13 @@
       <default>false</default>
     </key>
 
-    <key name='cache-distinguish-pitch' type='b'>
+    <key name="cache-distinguish-pitch" type="b">
       <_summary>Cache Distinguish Pitch</_summary>
       <_description>
         Normally, the cache pool is common for all voices, rates and
-        pitches. This means that when for example the key 'r' gets cached,
-        you change the voice and request the key 'r' again, it will be
-        retrieved from the cache and you will hear the old 'r' instead of a
+        pitches. This means that when for example the key "r" gets cached,
+        you change the voice and request the key "r" again, it will be
+        retrieved from the cache and you will hear the old "r" instead of a
         new one. By default, it only switches between languages.  In most
         cases, this isn't a problem for characters, keys and sound icons and
         it saves system resources. But if you want to keep separate caches
@@ -106,7 +106,7 @@
 
     <!-- FESTIVAL PERFORMANCE -->
 
-    <key name='reopen-socket' type='b'>
+    <key name="reopen-socket" type="b">
       <_summary>Reopen Socket</_summary>
       <_description>
         Switching reopen-socket to true will make the module close the
@@ -124,7 +124,7 @@
 
     <!-- DEBUGING -->
 
-    <key name='debug' type='b'>
+    <key name="debug" type="b">
       <_summary>Debug</_summary>
       <_description>
         Whether debugging is enabled in the festival output module or not.
@@ -132,7 +132,7 @@
       <default>false</default>
     </key>
 
-    <key name='debug-save-output' type='b'>
+    <key name="debug-save-output" type="b">
       <_summary>Debug Save Output</_summary>
       <_description>
         If debug-save-output is set, it writes the produced sound tracks

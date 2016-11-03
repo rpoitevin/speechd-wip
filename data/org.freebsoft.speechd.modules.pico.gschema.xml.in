@@ -1,16 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <schemalist gettext-domain="speech-dispatcher">
-  <schema path='/org/freebsoft/speechd/modules/pico/' id='org.freebsoft.speechd.modules.pico'>
+  <schema path="/org/freebsoft/speechd/modules/pico/" id="org.freebsoft.speechd.modules.pico">
 
-    <key name='lingware-path' type='s'>
+    <key name="lingware-path" type="s">
       <_summary>Lingware Path</_summary>
       <_description>
         The path for the text analysis Lingware resource file.
       </_description>
-      <default>'/usr/share/pico/lang/'</default>
+      <default>"/usr/share/pico/lang/"</default>
     </key>
 
-    <key name='debug' type='b'>
+    <key name="debug" type="b">
       <_summary>Debug</_summary>
       <_description>
         Whether debugging is enabled in the pico output module or not.

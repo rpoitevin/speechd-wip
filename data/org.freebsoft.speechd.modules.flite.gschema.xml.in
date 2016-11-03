@@ -1,18 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <schemalist gettext-domain="speech-dispatcher">
-  <schema path='/org/freebsoft/speechd/modules/flite/' id='org.freebsoft.speechd.modules.flite'>
+  <schema path="/org/freebsoft/speechd/modules/flite/" id="org.freebsoft.speechd.modules.flite">
 
-    <key name='max-chunk-length' type='u'>
+    <key name="max-chunk-length" type="u">
       <_summary>Max Chunk Length</_summary>
       <default>500</default>
     </key>
     
-    <key name='delimiters' type='s'>
+    <key name="delimiters" type="s">
       <_summary>Delimiters</_summary>
-      <default>'.?!;'</default>
+      <default>".?!;"</default>
     </key>
 
-    <key name='debug' type='b'>
+    <key name="debug" type="b">
       <_summary>Debug</_summary>
       <_description>
         Whether debugging is enabled in the espeak output module or not.
@@ -20,14 +20,14 @@
       <default>false</default>
     </key>
 
-    <key name='debug-file' type='s'>
+    <key name="debug-file" type="s">
       <_summary>Debug File</_summary>
       <_description>
         debug-file specifies the file where the debugging information
         should be stored (note that the log is overwritten each time
         the module starts)
       </_description>
-      <default>'/tmp/debug-flite'</default>
+      <default>"/tmp/debug-flite"</default>
     </key>
   </schema>
 </schemalist>

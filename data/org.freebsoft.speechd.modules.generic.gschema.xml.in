@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <schemalist gettext-domain="speech-dispatcher">
-  <schema id='org.freebsoft.speechd.modules.generic'>
+  <schema id="org.freebsoft.speechd.modules.generic">
 
-    <key name='execute-synth' type='s'>
+    <key name="execute-synth" type="s">
       <_summary>Execute Synthesizer</_summary>
       <_description>
         execute-synth is the shell command that should be
@@ -11,12 +11,12 @@
         You can use the variables $LANGUAGE, $VOICE, $PITCH and $RATE
         which will be substituted for the appropriate value (you
         can modify this value, see other parameters).
-        The command can be split into more lines, if necessary, using '\'.
+        The command can be split into more lines, if necessary, using "\".
       </_description>
-      <default>"echo \'$DATA\' | espeak -w $TMPDIR/espeak.wav -v $VOICE -s $RATE -a $VOLUME -p $PITCH $PUNCT --stdin &amp;&amp; $PLAY_COMMAND $TMPDIR/espeak.wav"</default>
+      <default>"echo \"$DATA\" | espeak -w $TMPDIR/espeak.wav -v $VOICE -s $RATE -a $VOLUME -p $PITCH $PUNCT --stdin &amp;&amp; $PLAY_COMMAND $TMPDIR/espeak.wav"</default>
     </key>
 
-    <key name='punctuation-none' type='s'>
+    <key name="punctuation-none" type="s">
       <_summary>Punctuation None</_summary>
       <_description>
         punctuation-none controls punctuation level None.
@@ -25,10 +25,10 @@
         Note that if an empty string is specified, then $PUNCT will be blank 
         which is a default situation for espeak.
       </_description>
-      <default>''</default>
+      <default>""</default>
     </key>
 
-    <key name='punctuation-some' type='s'>
+    <key name="punctuation-some" type="s">
       <_summary>Punctuation Some</_summary>
       <_description>
         punctuation-some controls punctuation level Some.
@@ -37,10 +37,10 @@
         Note that if an empty string is specified, then $PUNCT will be blank 
         which is a default situation for espeak.
       </_description>
-      <default>'--punct=\"()[]{};:\"'</default>
+      <default>"--punct=\"()[]{};:\""</default>
     </key>
 
-    <key name='punctuation-all' type='s'>
+    <key name="punctuation-all" type="s">
       <_summary>Punctuation All</_summary>
       <_description>
         punctuation-all controls punctuation level All.
@@ -49,10 +49,10 @@
         Note that if an empty string is specified, then $PUNCT will be blank 
         which is a default situation for espeak.
       </_description>
-      <default>'--punct'</default>
+      <default>"--punct"</default>
     </key>
 
-    <key name='strip-punctuation-characters' type='s'>
+    <key name="strip-punctuation-characters" type="s">
       <_summary>Strip Punctuation Characters</_summary>
       <_description>
         strip-punctuation-characters is a list (enclosed in doublequotes) of
@@ -60,10 +60,10 @@
         order not to be badly handled by the output module or misinterpreted
         by shell.
       </_description>
-      <default>''</default>
+      <default>""</default>
     </key>
 
-    <key name='rate-add' type='u'>
+    <key name="rate-add" type="u">
       <_summary>Rate Add</_summary>
       <_description>
         These parameters set _rate_, _pitch_, and _volume_ conversion. This is
@@ -75,7 +75,7 @@
         while speechd_rate is a value between -100 (lowest) and +100 (highest)
         You have to define some meaningful conversion for each synthesizer
 
-        Here's the mapping from SSIP (Speech Dispatcher) to ESpeak (v1.10):
+        Here"s the mapping from SSIP (Speech Dispatcher) to ESpeak (v1.10):
         
                   SSIP Range  SSIP Default    ESpeak Range    ESpeak Default
                   ----------- ------------    ------------    --------------
@@ -89,7 +89,7 @@
       <default>160</default>
     </key>
 
-    <key name='pitch-add' type='u'>
+    <key name="pitch-add" type="u">
       <_summary>Pitch Add</_summary>
       <_description>
         See rate-add
@@ -97,7 +97,7 @@
       <default>50</default>
     </key>
     
-    <key name='volume-add' type='u'>
+    <key name="volume-add" type="u">
       <_summary>Volume Add</_summary>
       <_description>
         See rate-add
@@ -105,7 +105,7 @@
       <default>10</default>
     </key>
 
-    <key name='rate-multiply' type='u'>
+    <key name="rate-multiply" type="u">
       <_summary>Rate Multiply</_summary>
       <_description>
         (These values are multiplied by 100, because DotConf currently
@@ -114,7 +114,7 @@
       <default>160</default>
     </key>
 
-    <key name='pitch-multiply' type='u'>
+    <key name="pitch-multiply" type="u">
       <_summary>Pitch Multiply</_summary>
       <_description>
         See rate-multiply
@@ -122,7 +122,7 @@
       <default>10</default>
     </key>
 
-    <key name='rate-force-integer' type='b'>
+    <key name="rate-force-integer" type="b">
       <_summary>Rate Force Integer</_summary>
       <_description>
         If the client program can't handle floats, you will have to
@@ -132,7 +132,7 @@
       <default>true</default>
     </key>
 
-    <key name='pitch-force-integer' type='b'>
+    <key name="pitch-force-integer" type="b">
       <_summary>Pitch Force Integer</_summary>
       <_description>
         See rate-force-integer
@@ -140,7 +140,7 @@
       <default>true</default>
     </key>
     
-    <key name='volume-force-integer' type='b'>
+    <key name="volume-force-integer" type="b">
       <_summary>Volume Force Integer</_summary>
       <_description>
         See rate-force-integer
@@ -148,7 +148,7 @@
       <default>true</default>
     </key>
 
-    <key name='debug' type='b'>
+    <key name="debug" type="b">
       <_summary>Debug</_summary>
       <_description>
         Whether debugging is enabled in this generic output module or not.

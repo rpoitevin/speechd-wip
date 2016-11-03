@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <schemalist gettext-domain="speech-dispatcher">
-  <schema path='/org/freebsoft/speechd/modules/ibmtts/' id='org.freebsoft.speechd.modules.ibmtts'>
+  <schema path="/org/freebsoft/speechd/modules/ibmtts/" id="org.freebsoft.speechd.modules.ibmtts">
 
 
-    <key name='audio-chunk-size' type='u'>
+    <key name="audio-chunk-size" type="u">
       <_summary>Audio Chunk Size</_summary>
       <_description>
         The number of samples returned by IBM TTS.
@@ -13,7 +13,7 @@
 
     <!-- SSML Support -->
 
-    <key name='use-ssml' type='b'>
+    <key name="use-ssml" type="b">
       <_summary>Use SSML</_summary>
       <_description>
         Some version of IBM TTS support SSML. If IbmttsUseSSML
@@ -27,7 +27,7 @@
 
     <!-- User dictionaries -->
 
-    <key name='dictionary-folder' type='s'>
+    <key name="dictionary-folder" type="s">
       <_summary>Dictionary Folder</_summary>
       <_description>
         IBM TTS supports user dictionaries so that you may customize 
@@ -85,13 +85,13 @@
         zh_CN: Mandarin Chinese
         zh_TW: Mandarin Taiwanese
       </_description>
-      <default>'/var/opt/IBM/ibmtts/dict'</default>
+      <default>"/var/opt/IBM/ibmtts/dict"</default>
     </key>
 
 
     <!-- Abbreviation dictionaries -->
 
-    <key name='use-abbreviation' type='b'>
+    <key name="use-abbreviation" type="b">
       <_summary>Use Abbreviation Dictionaries</_summary>
       <_description>
         Enable the abbreviation dictionaries.
@@ -101,7 +101,7 @@
 
     <!-- SOUND ICONS -->
 
-    <key name='sound-icon-folder' type='s'>
+    <key name="sound-icon-folder" type="s">
       <_summary>Sound Icon Folder</_summary>
       <_description>
         IBM TTS Synthesizer does not currently support sound icons
@@ -112,7 +112,7 @@
         file whose name matches the sound icon name.  If blank, or no
         matching file is found, the name of the sound icon will be spoken.
       </_description>
-      <default>'/usr/share/sounds/sound-icons/'</default>
+      <default>"/usr/share/sounds/sound-icons/"</default>
     </key>
 
     <!-- VOICE PARAMETERS Not sure how to handle these yet... -->
@@ -216,7 +216,7 @@ IbmttsKeySubstitution "en"  "Z"         "capital Z "
 
     <!-- Debug -->
 
-    <key name='debug' type='b'>
+    <key name="debug" type="b">
       <_summary>Debug</_summary>
       <_description>
         Whether debugging is enabled in the ibmtts output module or not.
@@ -224,14 +224,14 @@ IbmttsKeySubstitution "en"  "Z"         "capital Z "
       <default>false</default>
     </key>
 
-    <key name='debug-file' type='s'>
+    <key name="debug-file" type="s">
       <_summary>Debug File</_summary>
       <_description>
         debug-file specifies the file where the debugging information
         should be stored (note that the log is overwritten each time
         the module starts)
       </_description>
-      <default>'/tmp/debug-ibmtts'</default>
+      <default>"/tmp/debug-ibmtts"</default>
     </key>
   </schema>
 </schemalist>

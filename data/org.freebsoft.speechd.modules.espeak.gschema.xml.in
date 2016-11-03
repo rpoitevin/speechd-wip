@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <schemalist gettext-domain="speech-dispatcher">
 
-  <schema path='/org/freebsoft/speechd/modules/espeak/' id='org.freebsoft.speechd.modules.espeak'>
+  <schema path="/org/freebsoft/speechd/modules/espeak/" id="org.freebsoft.speechd.modules.espeak">
 
     <!-- Sound Icons -->
 
-    <key name='sound-icon-folder' type='s'>
+    <key name="sound-icon-folder" type="s">
       <_summary>Sound Icon Folder</_summary>
       <_description>
         Espeak  does not currently support playing sound icons
@@ -16,10 +16,10 @@
         file whose name matches the sound icon name.  If blank, or no
         matching file is found, the name of the sound icon will be spoken.
       </_description>
-      <default>'/usr/share/sounds/sound-icons/'</default>
+      <default>"/usr/share/sounds/sound-icons/"</default>
     </key>
 
-    <key name='sound-icon-volume' type='u'>
+    <key name="sound-icon-volume" type="u">
       <_summary>Sound Icon Volume</_summary>
       <_description>Volume at which sound icons are played.</_description>
       <default>0</default>
@@ -27,16 +27,16 @@
 
     <!-- Punctuation -->
 
-    <key name='punctuation-list' type='s'>
+    <key name="punctuation-list" type="s">
       <_summary>Punctuation List</_summary>
       <_description>
-        Characters to be spoken when punctuation setting is 'some'
+        Characters to be spoken when punctuation setting is "some"
         Encoding is UTF-8
       </_description>
-      <default>'@+_'</default>
+      <default>"@+_"</default>
     </key>
     
-    <key name='capital-pitch-rise' type='u'>
+    <key name="capital-pitch-rise" type="u">
       <_summary>Capital Pitch Rise</_summary>
       <_description>
         This values gives the amount in Hz by which the pitch
@@ -50,7 +50,7 @@
     <!-- The following options are in words per minute, the same as the
          -s parameter for the -s option in espeak command line tool. -->
 
-    <key name='min-rate' type='i'>
+    <key name="min-rate" type="i">
       <_summary>Minimum Rate</_summary>
       <_description>
         Minimum rate (-100 in speech-dispatcher)
@@ -58,7 +58,7 @@
       <default>80</default>
     </key>
 
-    <key name='normal-rate' type='i'>
+    <key name="normal-rate" type="i">
       <_summary>Normal Rate</_summary>
       <_description>
         Normal rate (0 in speech-dispatcher)
@@ -66,7 +66,7 @@
       <default>170</default>
     </key>
 
-    <key name='max-rate' type='i'>
+    <key name="max-rate" type="i">
       <_summary>Max Rate</_summary>
       <_description>
         Maximum rate (100 in speech-dispatcher)
@@ -77,7 +77,7 @@
 
     <!-- Espeak variants -->
 
-    <key name='list-voice-variants' type='b'>
+    <key name="list-voice-variants" type="b">
       <_summary>List Voice Variants</_summary>
       <_description>
         Controls whether espeak voice variants are presented in the list of
@@ -90,7 +90,7 @@
 
     <!-- Internal parameters -->
 
-    <key name='audio-chunk-size' type='u'>
+    <key name="audio-chunk-size" type="u">
       <_summary>Audio Chunk Size</_summary>
       <_description>
         Number of ms of audio returned by the espeak cal
@@ -99,7 +99,7 @@ lback function.
       <default>3000</default>
     </key>
 
-    <key name='audio-queue-max-size' type='u'>
+    <key name="audio-queue-max-size" type="u">
       <_summary>Audio Queue Max Size</_summary>
       <_description>
         Maximum number of samples to buffer in playback queue.
@@ -107,7 +107,7 @@ lback function.
       <default>441000</default>
     </key>
 
-    <key name='debug' type='b'>
+    <key name="debug" type="b">
       <_summary>Debug</_summary>
       <_description>
         Whether debugging is enabled in the espeak output module or not.

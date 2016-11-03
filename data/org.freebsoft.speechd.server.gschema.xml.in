@@ -42,7 +42,7 @@
 
     <!-- System Options -->
 
-    <key name='communication-method' enum='org.freebsoft.speechd.server.communication-method'>
+    <key name="communication-method" enum="org.freebsoft.speechd.server.communication-method">
       <_summary>Communication Method</_summary>
       <_description>
         The method used by speech-dispatcher to communicate with it's clients.
@@ -57,11 +57,11 @@
         from different machines. See also the Port and LocalhostAccessOnly
         configuration variables.
       </_description>
-      <default>'unix_socket'</default>
+      <default>"unix_socket"</default>
     </key>
 
-    <key name='socket-path' type='s'>
-      <_summary>Path for unix socket to use or 'default'</_summary>
+    <key name="socket-path" type="s">
+      <_summary>Path for unix socket to use or "default"</_summary>
       <_description>
         Socket Path is either "default" or a full path to the filesystem
         where the driving Unix socket file should be created in case the
@@ -70,10 +70,10 @@
         is the directory specified by the XDG Base Directory Specification.
         Do not change this unless you have a reason and know what you are doing.
       </_description>
-      <default>'default'</default>
+      <default>"default"</default>
     </key>
 
-    <key name='port' type='u'>
+    <key name="port" type="u">
       <_summary>Port for inet socket communication</_summary>
       <_description>
         The Port on which Speech Dispatcher should be available to clients if the "inet_socket"
@@ -82,7 +82,7 @@
       <default>6560</default>
     </key>
 
-    <key name='localhost-access-only' type='b'>
+    <key name="localhost-access-only" type="b">
       <_summary>Minutes to seconds separator</_summary>
       <_description>
         By default, if "inet_socket" communication method is used, the specified port is opened only
@@ -122,12 +122,12 @@
       <_description>
         The Log Dir specifies where the Speech Dispatcher logs reside
         Specify "stdout" for standard console output
-        or a custom log directory path. 'default' means
+        or a custom log directory path. "default" means
         the logs are written to the default destination (e.g. a preconfigured
         system directory or the home directory if .speech-dispatcher is present)
         DO NOT COMMENT OUT THIS OPTION, leave as "default" for standard logging
       </_description>
-      <default>'default'</default>
+      <default>"default"</default>
     </key>
 
     <key name="custom-log-file" type="a{ss}">
@@ -196,13 +196,13 @@
         currently supported: MALE1, MALE2, MALE3, FEMALE1, FEMALE2, FEMALE3,
         CHILD_MALE, CHILD_FEMALE
       </_description>
-      <default>'male1'</default>
+      <default>"male1"</default>
     </key>
 
     <key name="default-language" type="s">
       <_summary>Default Language</_summary>
       <_description>The Default language with which to speak</_description>
-      <default>'en'</default>
+      <default>"en"</default>
     </key>
 
     <!-- Message Dispatching Control -->
@@ -213,7 +213,7 @@
         The Default Client Name specifies the name of a client who didn't
         introduce himself at the beginning of an SSIP session.
       </_description>
-      <default>'unknown:unknown:unknown'</default>
+      <default>"unknown:unknown:unknown"</default>
     </key>
 
     <key name="default-priority" enum="org.freebsoft.speechd.server.priority">
@@ -222,7 +222,7 @@
         The Default Priority. Use with caution, normally this shouldn't be
         changed globally (at this place)
       </_description>
-      <default>'text'</default>
+      <default>"text"</default>
     </key>
 
     <key name="default-pause-context" type="u">
@@ -247,7 +247,7 @@
         DefaultPunctuationSome) all: all punctuation marks are sent to
         synthesis
       </_description>
-      <default>'none'</default>
+      <default>"none"</default>
     </key>
 
     <key name="default-capital-letter-recognition" enum="org.freebsoft.speechd.server.capital-letters">
@@ -259,7 +259,7 @@
         before them but they should be read normally, it set to "none"
         capital letters are not recognized (by default)
       </_description>
-      <default>'none'</default>
+      <default>"none"</default>
     </key>
 
     <key name="default-spelling" type="b">
@@ -289,7 +289,7 @@
         different sound systems and provides alternative output for Pulse Audio
         and ALSA as well as for other backends.
       </_description>
-      <default>'pulse'</default>
+      <default>"pulse"</default>
     </key>
 
     <!-- Pulse Audio Options -->
@@ -299,7 +299,7 @@
       <_description>
         Pulse audio server name or "default" for the default pulse server
       </_description>
-      <default>'default'</default>
+      <default>"default"</default>
     </key>
 
     <key name="audio-pulse-min-length" type="u">
@@ -315,7 +315,7 @@
     <key name="audio-alsa-device" type="s">
       <_summary>Audio ALSA Device</_summary>
       <_description>Audio device for ALSA output</_description>
-      <default>'default'</default>
+      <default>"default"</default>
     </key>
 
     <!-- OSS Audio Options -->
@@ -323,7 +323,7 @@
     <key name="audio-oss-device" type="s">
       <_summary>Audio OSS Device</_summary>
       <_description>Audio device for OSS output</_description>
-      <default>'/dev/dsp'</default>
+      <default>"/dev/dsp"</default>
     </key>
 
     <!-- NAS Audio Options -->
@@ -337,7 +337,7 @@
         you can use it also over network (for instance
         when working on remote machines).
       </_description>
-      <default>'tcp/localhost:5450'</default>
+      <default>"tcp/localhost:5450"</default>
     </key>
 
     <!-- Output Modules Options -->
@@ -347,9 +347,9 @@
       <_description>
         This is the list of all output modules that should be enabled.
         Each is a string separated by colons of the name:module-binary:config-file
-        such as 'espeak:sd_espeak:espeak.conf' and 'swift-generic:sd_generic:swift-generic.conf'
+        such as "espeak:sd_espeak:espeak.conf" and "swift-generic:sd_generic:swift-generic.conf"
       </_description>
-      <default>['espeak:sd_espeak:espeak.conf', 'festival:sd_festival:festival.conf', 'pico:sd_pico:pico.conf']</default>
+      <default>["espeak:sd_espeak:espeak.conf", "festival:sd_festival:festival.conf", "pico:sd_pico:pico.conf"]</default>
     </key>
 
     <key name="default-module" type="s">
@@ -366,7 +366,7 @@
         <choice value="ibmtts" />
         <choice value="pico" />
       </choices>
-      <default>'espeak'</default>
+      <default>"espeak"</default>
     </key>
 
     <key name="language-default-module" type="a{ss}">
@@ -375,7 +375,7 @@
         The Language Default Module selects which output modules are prefered
         for specified languages.
       </_description>
-      <default>{'en': 'espeak', 'cs': 'festival', 'es': 'festival'}</default>
+      <default>{"en": "espeak", "cs": "festival", "es": "festival"}</default>
     </key>
 
   </schema>
