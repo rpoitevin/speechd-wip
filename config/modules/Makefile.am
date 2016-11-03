@@ -17,4 +17,9 @@ dist_moduleconf_DATA += pico.conf
 dist_moduleconforig_DATA += pico.conf
 endif
 
+if kali_support
+dist_moduleconf_DATA += kali.conf
+dist_moduleconforig_DATA += kali.conf
+endif
+
 -include $(top_srcdir)/git.mk
