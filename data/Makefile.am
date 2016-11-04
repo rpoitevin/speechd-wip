@@ -7,9 +7,9 @@ if flite_support
 gsettings_SCHEMAS += org.freebsoft.speechd.modules.flite.gschema.xml
 endif
 
-# if ibmtts_support
-# gsettings_SCHEMAS += org.freebsoft.speechd.modules.ibmtts.gschema.xml
-# endif
+if ibmtts_support
+gsettings_SCHEMAS += org.freebsoft.speechd.modules.ibmtts.gschema.xml
+endif
 
 if espeak_support
 gsettings_SCHEMAS += org.freebsoft.speechd.modules.espeak.gschema.xml
