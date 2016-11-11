@@ -50,7 +50,7 @@
     <!-- The following options are in words per minute, the same as the
          -s parameter for the -s option in espeak command line tool. -->
 
-    <key name="min-rate" type="i">
+    <key name="min-rate" type="u">
       <_summary>Minimum Rate</_summary>
       <_description>
         Minimum rate (-100 in speech-dispatcher)
@@ -58,7 +58,7 @@
       <default>80</default>
     </key>
 
-    <key name="normal-rate" type="i">
+    <key name="normal-rate" type="u">
       <_summary>Normal Rate</_summary>
       <_description>
         Normal rate (0 in speech-dispatcher)
@@ -66,7 +66,7 @@
       <default>170</default>
     </key>
 
-    <key name="max-rate" type="i">
+    <key name="max-rate" type="u">
       <_summary>Max Rate</_summary>
       <_description>
         Maximum rate (100 in speech-dispatcher)
