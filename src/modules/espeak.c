@@ -516,6 +516,16 @@ int module_close(void)
 	sem_destroy(&espeak_play_semaphore);
 	sem_destroy(&espeak_stop_or_pause_semaphore);
 
+	if (EspeakPunctuationList) {
+		g_free(EspeakPunctuationList);
+		EspeakPunctuationList = NULL;
+	}
+
+	if (EspeakSoundIconFolder) {
+		g_free(EspeakSoundIconFolder);
+		EspeakSoundIconFolder = NULL;
+	}
+
 	return 0;
 }
 
