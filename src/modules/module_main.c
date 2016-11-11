@@ -30,7 +30,6 @@
 #include <string.h>
 #include <pthread.h>
 #include <glib.h>
-#include <glib-unix.h>
 #include <dotconf.h>
 #include <ltdl.h>
 
@@ -43,7 +42,8 @@
 		pthread_mutex_lock(&module_stdout_mutex); \
 		if (printf("%s\n", msg = (char*) function()) < 0){ \
 			DBG("Broken pipe, exiting...\n"); \
-			shut_down(2); \
+			ret = 2; \
+			break; \
 		} \
 		fflush(stdout); \
 		pthread_mutex_unlock(&module_stdout_mutex);\
@@ -56,7 +56,8 @@
 		pthread_mutex_lock(&module_stdout_mutex); \
 		if (printf("%s\n", msg = (char*) function(cmd_buf)) < 0){ \
 			DBG("Broken pipe, exiting...\n"); \
-			shut_down(2); \
+			ret = 2; \
+			break; \
 		} \
 		fflush(stdout); \
 		pthread_mutex_unlock(&module_stdout_mutex);\
@@ -67,71 +68,6 @@
 	if (!strcmp(cmd_buf, #command"\n")){ \
 		function(); \
 	}
-
-GMainLoop *main_loop = NULL;
-
-static void shut_down(int retval)
-{
-	g_main_loop_quit(main_loop);
-	g_main_loop_unref(main_loop);
-	main_loop = NULL;
-	do_quit();
-	exit(retval);
-}
-
-static gboolean process_incoming (gint          fd,
-                                  GIOCondition  condition,
-                                  gpointer      data)
-{
-	DBG("process_incoming function called.");
-
-	char *cmd_buf = NULL;
-	size_t n = 0;
-	int ret = 0;
-
-	ret = spd_getline(&cmd_buf, &n, stdin);
-	if (ret == -1) {
-		DBG("Broken pipe, exiting... \n");
-		shut_down(ret);
-		return FALSE;
-	}
-
-	DBG("CMD: <%s>", cmd_buf);
-
-	PROCESS_CMD(SPEAK, do_speak)
-	    else
-	PROCESS_CMD(SOUND_ICON, do_sound_icon)
-	    else
-	PROCESS_CMD(CHAR, do_char)
-	    else
-	PROCESS_CMD(KEY, do_key)
-	    else
-	PROCESS_CMD_NRP(STOP, do_stop)
-	    else
-	PROCESS_CMD_NRP(PAUSE, do_pause)
-	    else
-	PROCESS_CMD(LIST VOICES, do_list_voices)
-	    else
-	PROCESS_CMD(SET, do_set)
-	    else
-	PROCESS_CMD(AUDIO, do_audio)
-	    else
-	PROCESS_CMD(LOGLEVEL, do_loglevel)
-	    else
-	PROCESS_CMD_W_ARGS(DEBUG, do_debug)
-		else
-	if (!strcmp(cmd_buf, "QUIT\n")) {
-		g_free(cmd_buf);
-		shut_down(0);
-		return FALSE;
-	} else {
-		printf("300 ERR UNKNOWN COMMAND\n");
-		fflush(stdout);
-	}
-	g_free(cmd_buf);
-
-	return TRUE;
-}
 
 int main(int argc, char *argv[])
 {
@@ -226,13 +162,53 @@ int main(int argc, char *argv[])
 	g_free(status_info);
 	g_free(cmd_buf);
 
-	main_loop = g_main_loop_new(g_main_context_default(), FALSE);
+	while (1) {
+		cmd_buf = NULL;
+		n = 0;
+		ret = spd_getline(&cmd_buf, &n, stdin);
+		if (ret == -1) {
+			DBG("Broken pipe, exiting... \n");
+			ret = 2;
+			break;
+		}
 
-	g_unix_fd_add(fileno(stdin), G_IO_IN, process_incoming, NULL);
+		DBG("CMD: <%s>", cmd_buf);
 
-	g_main_loop_run(main_loop);
+		PROCESS_CMD(SPEAK, do_speak)
+		    else
+		PROCESS_CMD(SOUND_ICON, do_sound_icon)
+		    else
+		PROCESS_CMD(CHAR, do_char)
+		    else
+		PROCESS_CMD(KEY, do_key)
+		    else
+		PROCESS_CMD_NRP(STOP, do_stop)
+		    else
+		PROCESS_CMD_NRP(PAUSE, do_pause)
+		    else
+		PROCESS_CMD(LIST VOICES, do_list_voices)
+		    else
+		PROCESS_CMD(SET, do_set)
+		    else
+		PROCESS_CMD(AUDIO, do_audio)
+		    else
+		PROCESS_CMD(LOGLEVEL, do_loglevel)
+		    else
+		PROCESS_CMD_W_ARGS(DEBUG, do_debug)
+		    else
+	if (!strcmp(cmd_buf, "QUIT\n")) {
+		do_quit();
+		exit(0);
+	} else {
+		printf("300 ERR UNKNOWN COMMAND\n");
+		fflush(stdout);
+	}
 
-	shut_down(0);
+	g_free(cmd_buf);
+	}
+
+	module_close();
+	exit(ret);
 }
 
 #undef PROCESS_CMD
