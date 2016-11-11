@@ -101,7 +101,7 @@
         time if no clients are connected. The timeout value is in seconds, and is started when
         the last client disconnects. A value of 0 disables the timeout.
       </_description>
-      <default>100</default>
+      <default>5</default>
     </key>
 
     <!-- Logging Options -->
