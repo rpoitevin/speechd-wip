@@ -39,10 +39,8 @@ extern "C" {
 
 #include "module_utils.h"
 }
-
 #define MODULE_NAME     "kali"
 #define MODULE_VERSION  "0.0"
-
 #define DEBUG_MODULE 1
 DECLARE_DEBUG();
 
@@ -132,28 +130,28 @@ int module_init(char **status_info)
 
 	/* Init kali and register a new voice */
 	if (mkstemp(kali_wave_file) < 0) {
-	  DBG("Kali: cannot create temporary wave file");
-	  g_strdup("The module couldn't create temporary wave file");
-	  return -1;
+		DBG("Kali: cannot create temporary wave file");
+		g_strdup("The module couldn't create temporary wave file");
+		return -1;
 	}
 	initGlobal();
 	initParle();
 	initTrans();
 	initAnalyse();
 	initKali();
-	SetSortieSonMultiKaliStd(0,false);	//sound output
-	SetSortieWaveMultiKaliStd(0, true); //output to wave
-	SetNomFichierWaveMultiKaliStd(0, kali_wave_file); //wave file name
+	SetSortieSonMultiKaliStd(0, false);	//sound output
+	SetSortieWaveMultiKaliStd(0, true);	//output to wave
+	SetNomFichierWaveMultiKaliStd(0, kali_wave_file);	//wave file name
 	SetDebitKali(KaliNormalRate);
 	SetVolumeKali(KaliNormalVolume);
 	SetHauteurKali(KaliNormalPitch);
 	kali_voice_list = kali_get_voices();
-	kali_set_voice(KaliVoiceParameters);	
+	kali_set_voice(KaliVoiceParameters);
 
 	DBG("KaliMaxChunkLength = %d\n", KaliMaxChunkLength);
 	DBG("KaliDelimiters = %s\n", KaliDelimiters);
 
-	kali_message = (char**) g_malloc(sizeof(char *));
+	kali_message = (char **)g_malloc(sizeof(char *));
 	*kali_message = NULL;
 
 	sem_init(&kali_semaphore, 0, 0);
@@ -180,58 +178,58 @@ int module_init(char **status_info)
 
 SPDVoice **module_list_voices(void)
 {
-  return kali_voice_list;
+	return kali_voice_list;
 }
 
 int module_speak(gchar * data, size_t bytes, SPDMessageType msgtype)
 {
-  DBG("write()\n");
+	DBG("write()\n");
 
-  if (kali_speaking) {
-    DBG("Speaking when requested to write");
-    return 0;
-  }
+	if (kali_speaking) {
+		DBG("Speaking when requested to write");
+		return 0;
+	}
 
-  DBG("Requested data: |%s|\n", data);
+	DBG("Requested data: |%s|\n", data);
 
-  if (*kali_message != NULL) {
-    g_free(*kali_message);
-    *kali_message = NULL;
-  }
-  *kali_message = module_strip_ssml(data);
-  kali_message_type = SPD_MSGTYPE_TEXT;
+	if (*kali_message != NULL) {
+		g_free(*kali_message);
+		*kali_message = NULL;
+	}
+	*kali_message = module_strip_ssml(data);
+	kali_message_type = SPD_MSGTYPE_TEXT;
 
-  /* Setting voice */
-  UPDATE_PARAMETER(rate, kali_set_rate);
-  UPDATE_PARAMETER(volume, kali_set_volume);
-  UPDATE_PARAMETER(pitch, kali_set_pitch);
-  UPDATE_PARAMETER(punctuation_mode, kali_set_punctuation_mode);
-  UPDATE_STRING_PARAMETER(voice.name, kali_set_voice);
-  kali_set_voice(msg_settings.voice.name);
+	/* Setting voice */
+	UPDATE_PARAMETER(rate, kali_set_rate);
+	UPDATE_PARAMETER(volume, kali_set_volume);
+	UPDATE_PARAMETER(pitch, kali_set_pitch);
+	UPDATE_PARAMETER(punctuation_mode, kali_set_punctuation_mode);
+	UPDATE_STRING_PARAMETER(voice.name, kali_set_voice);
+	kali_set_voice(msg_settings.voice.name);
 
-  /* Send semaphore signal to the speaking thread */
-  kali_speaking = 1;
-  sem_post(&kali_semaphore);
+	/* Send semaphore signal to the speaking thread */
+	kali_speaking = 1;
+	sem_post(&kali_semaphore);
 
-  DBG("Kali: leaving write() normally\n\r");
-  return bytes;
+	DBG("Kali: leaving write() normally\n\r");
+	return bytes;
 }
 
 int module_stop(void)
 {
-  int ret;
-  DBG("kali: stop()\n");
+	int ret;
+	DBG("kali: stop()\n");
 
-  kali_stop = 1;
-  if (module_audio_id) {
-    DBG("Stopping audio");
-    ret = spd_audio_stop(module_audio_id);
-    if (ret != 0)
-      DBG("WARNING: Non 0 value from spd_audio_stop: %d",
-	  ret);
-  }
+	kali_stop = 1;
+	if (module_audio_id) {
+		DBG("Stopping audio");
+		ret = spd_audio_stop(module_audio_id);
+		if (ret != 0)
+			DBG("WARNING: Non 0 value from spd_audio_stop: %d",
+			    ret);
+	}
 
-  return 0;
+	return 0;
 }
 
 size_t module_pause(void)
@@ -280,224 +278,224 @@ void kali_strip_silence(AudioTrack * track)
 }
 
 void *_kali_speak(void *nothing)
-{	AudioTrack track;
+{
+	AudioTrack track;
 #if defined(BYTE_ORDER) && (BYTE_ORDER == BIG_ENDIAN)
-  AudioFormat format = SPD_AUDIO_BE;
+	AudioFormat format = SPD_AUDIO_BE;
 #else
-  AudioFormat format = SPD_AUDIO_LE;
+	AudioFormat format = SPD_AUDIO_LE;
 #endif
-  unsigned int pos;
-  char *buf;
-  int bytes;
-  int ret;
+	unsigned int pos;
+	char *buf;
+	int bytes;
+	int ret;
 
-  DBG("kali: speaking thread starting.......\n");
+	DBG("kali: speaking thread starting.......\n");
 
-  set_speaking_thread_parameters();
+	set_speaking_thread_parameters();
 
-  while (1) {
-    sem_wait(&kali_semaphore);
-    DBG("Semaphore on\n");
+	while (1) {
+		sem_wait(&kali_semaphore);
+		DBG("Semaphore on\n");
 
-    kali_stop = 0;
-    kali_speaking = 1;
+		kali_stop = 0;
+		kali_speaking = 1;
 
-    /* TODO: free(buf) */
-    buf =
-      (char *)g_malloc((KaliMaxChunkLength + 1) * sizeof(char));
-    pos = 0;
-    module_report_event_begin();
-    while (1) {
-      if (kali_stop) {
-	DBG("Stop in child, terminating");
-	kali_speaking = 0;
-	module_report_event_stop();
-	break;
-      }
-      bytes =
-	module_get_message_part(*kali_message, buf, &pos,
-				KaliMaxChunkLength,
-				KaliDelimiters);
+		/* TODO: free(buf) */
+		buf = (char *)g_malloc((KaliMaxChunkLength + 1) * sizeof(char));
+		pos = 0;
+		module_report_event_begin();
+		while (1) {
+			if (kali_stop) {
+				DBG("Stop in child, terminating");
+				kali_speaking = 0;
+				module_report_event_stop();
+				break;
+			}
+			bytes =
+			    module_get_message_part(*kali_message, buf, &pos,
+						    KaliMaxChunkLength,
+						    KaliDelimiters);
 
-      if (bytes < 0) {
-	DBG("End of message");
-	kali_speaking = 0;
-	module_report_event_end();
-	break;
-      }
+			if (bytes < 0) {
+				DBG("End of message");
+				kali_speaking = 0;
+				module_report_event_end();
+				break;
+			}
 
-      buf[bytes] = 0;
-      DBG("Returned %d bytes from get_part\n", bytes);
-      DBG("Text to synthesize is '%s'\n", buf);
+			buf[bytes] = 0;
+			DBG("Returned %d bytes from get_part\n", bytes);
+			DBG("Text to synthesize is '%s'\n", buf);
 
-      if (kali_pause_requested && (current_index_mark != -1)) {
-	DBG("Pause requested in parent, position %d\n",
-	    current_index_mark);
-	kali_pause_requested = 0;
-	kali_position = current_index_mark;
-	break;
-      }
+			if (kali_pause_requested && (current_index_mark != -1)) {
+				DBG("Pause requested in parent, position %d\n",
+				    current_index_mark);
+				kali_pause_requested = 0;
+				kali_position = current_index_mark;
+				break;
+			}
 
-      if (bytes > 0) {
-	DBG("Speaking in child...");
+			if (bytes > 0) {
+				DBG("Speaking in child...");
 
-	DBG("Trying to synthesize text");
-	MessageKali((unsigned char*)buf);
-	while(QueryIndexKali()>0);	//waiting for the end of message
+				DBG("Trying to synthesize text");
+				MessageKali((unsigned char *)buf);
+				while (QueryIndexKali() > 0) ;	//waiting for the end of message
 
-	if (kali_stop) {
-	  DBG("Stop in child, terminating");
-	  kali_speaking = 0;
-	  module_report_event_stop();
-	  break;
+				if (kali_stop) {
+					DBG("Stop in child, terminating");
+					kali_speaking = 0;
+					module_report_event_stop();
+					break;
+				}
+				DBG("Playing part of the message");
+				ret = module_play_file(kali_wave_file);
+				if (ret < 0)
+					DBG("ERROR: failed to play the track");
+				unlink(kali_wave_file);
+				if (kali_stop) {
+					DBG("Stop in child, terminating (s)");
+					kali_speaking = 0;
+					module_report_event_stop();
+					break;
+				}
+				if (kali_stop) {
+					DBG("Stop in child, terminating (s)");
+					kali_speaking = 0;
+					module_report_event_stop();
+					break;
+				}
+			} else if (bytes == -1) {
+				DBG("End of data in speaking thread");
+				kali_speaking = 0;
+				module_report_event_end();
+				break;
+			} else {
+				kali_speaking = 0;
+				module_report_event_end();
+				break;
+			}
+
+			if (kali_stop) {
+				DBG("Stop in child, terminating");
+				kali_speaking = 0;
+				module_report_event_stop();
+				break;
+			}
+		}
+		kali_stop = 0;
+		g_free(buf);
 	}
-	DBG("Playing part of the message");
-	ret = module_play_file(kali_wave_file);
-	if (ret < 0)
-	  DBG("ERROR: failed to play the track");
-	unlink(kali_wave_file);
-	if (kali_stop) {
-	  DBG("Stop in child, terminating (s)");
-	  kali_speaking = 0;
-	  module_report_event_stop();
-	  break;
-	}
-	if (kali_stop) {
-	  DBG("Stop in child, terminating (s)");
-	  kali_speaking = 0;
-	  module_report_event_stop();
-	  break;
-	}
-      } else if (bytes == -1) {
-	DBG("End of data in speaking thread");
+
 	kali_speaking = 0;
-	module_report_event_end();
-	break;
-      } else {
-	kali_speaking = 0;
-	module_report_event_end();
-	break;
-      }
 
-      if (kali_stop) {
-	DBG("Stop in child, terminating");
-	kali_speaking = 0;
-	module_report_event_stop();
-	break;
-      }
-    }
-    kali_stop = 0;
-    g_free(buf);
-  }
+	DBG("kali: speaking thread ended.......\n");
 
-  kali_speaking = 0;
-
-  DBG("kali: speaking thread ended.......\n");
-
-  pthread_exit(NULL);
+	pthread_exit(NULL);
 }
 
 static void kali_set_rate(signed int rate)
 {
-  short speed = 1;
-  
-  assert(rate >= -100 && rate <= +100);
-  if (rate < 0)
-    speed = GetDebitMinKaliStd() * (short)rate / 100;
-  if (rate > 0)
-    speed = GetDebitMaxKaliStd() * (short)rate / 100;
-  SetDebitKali(speed);
+	short speed = 1;
+
+	assert(rate >= -100 && rate <= +100);
+	if (rate < 0)
+		speed = GetDebitMinKaliStd() * (short)rate / 100;
+	if (rate > 0)
+		speed = GetDebitMaxKaliStd() * (short)rate / 100;
+	SetDebitKali(speed);
 }
 
 static void kali_set_volume(signed int volume)
 {
-  short vol = 1;
+	short vol = 1;
 
-  assert(volume >= -100 && volume <= +100);
-  if (volume < 0)
-    vol = GetVolumeMinKaliStd() * (short)volume / 100;
-  if (volume > 0)
-    vol = GetVolumeMaxKaliStd() * (short)volume / 100;  
-  SetVolumeKali(vol);
+	assert(volume >= -100 && volume <= +100);
+	if (volume < 0)
+		vol = GetVolumeMinKaliStd() * (short)volume / 100;
+	if (volume > 0)
+		vol = GetVolumeMaxKaliStd() * (short)volume / 100;
+	SetVolumeKali(vol);
 }
 
 static void kali_set_pitch(signed int pitch)
 {
-  short ptch = 1;
-  
-  assert(pitch >= -100 && pitch <= +100);
-  if (pitch < 0)
-    ptch = GetHauteurMinKaliStd() * (short)pitch / 100;
-  if (pitch > 0)
-    ptch = GetHauteurMaxKaliStd() * (short)pitch / 100;    
-  SetHauteurKali((short)ptch);
+	short ptch = 1;
+
+	assert(pitch >= -100 && pitch <= +100);
+	if (pitch < 0)
+		ptch = GetHauteurMinKaliStd() * (short)pitch / 100;
+	if (pitch > 0)
+		ptch = GetHauteurMaxKaliStd() * (short)pitch / 100;
+	SetHauteurKali((short)ptch);
 }
 
 void kali_set_punctuation_mode(SPDPunctuation punct)
 {
 	if (punct == SPD_PUNCT_NONE)
-	  SetModeLectureKali(0);
+		SetModeLectureKali(0);
 	if (punct == SPD_PUNCT_SOME)
-	  SetModeLectureKali(1);
+		SetModeLectureKali(1);
 	if (punct == SPD_PUNCT_ALL)
-	  SetModeLectureKali(2);
+		SetModeLectureKali(2);
 }
 
 static void kali_set_voice(char *voice)
 {
-  short i, nlang;
-  char *v;
+	short i, nlang;
+	char *v;
 
-  v = (char * ) g_malloc(sizeof(char *));
-      
-  if (voice == NULL) {
-    v = g_strdup(KaliVoiceParameters);
-  } else {
-    v = g_strdup(voice);
-  }
-  for (i = 0; kali_voice_list[i] != NULL; i++) {
-    if (strcasecmp(kali_voice_list[i]->name, v) == 0) {
-      nlang = GetNLangueVoixKaliStd(i + 1);
-      SetLangueKali(nlang);
-      SetVoixKali(i + 1);
-      break;
-    }
-  }
+	v = (char *)g_malloc(sizeof(char *));
 
-  g_free(v);
-  v = NULL;
+	if (voice == NULL) {
+		v = g_strdup(KaliVoiceParameters);
+	} else {
+		v = g_strdup(voice);
+	}
+	for (i = 0; kali_voice_list[i] != NULL; i++) {
+		if (strcasecmp(kali_voice_list[i]->name, v) == 0) {
+			nlang = GetNLangueVoixKaliStd(i + 1);
+			SetLangueKali(nlang);
+			SetVoixKali(i + 1);
+			break;
+		}
+	}
+
+	g_free(v);
+	v = NULL;
 }
 
 static SPDVoice **kali_get_voices()
 {
-  short i;
-  SPDVoice **result = NULL;
-  short num_voices;
-  char *voice;
-  short nlang;
-  char *language;
+	short i;
+	SPDVoice **result = NULL;
+	short num_voices;
+	char *voice;
+	short nlang;
+	char *language;
 
-  num_voices = GetNbVoixKali();
-  DBG("Kali: %d voices total.", num_voices);
-  voice = (char *) g_malloc(sizeof(char *));
-  language = (char *) g_malloc(sizeof(char *));
-  result = g_new0(SPDVoice *, num_voices);
+	num_voices = GetNbVoixKali();
+	DBG("Kali: %d voices total.", num_voices);
+	voice = (char *)g_malloc(sizeof(char *));
+	language = (char *)g_malloc(sizeof(char *));
+	result = g_new0(SPDVoice *, num_voices);
 
-  for (i = 0; i < num_voices; i++) {
-    result[i] = g_new0(SPDVoice, 1);
-    GetNomVoixKali(i + 1, voice);
-    result[i]->name = (char *) g_strdup(voice);
-    nlang = GetNLangueVoixKaliStd(i + 1);
-    GetNomLangueKali(nlang, language);
-    result[i]->language = (char *) g_strdup(language);
-    result[i]->variant = NULL;
-  }
-  result[i] = NULL;
+	for (i = 0; i < num_voices; i++) {
+		result[i] = g_new0(SPDVoice, 1);
+		GetNomVoixKali(i + 1, voice);
+		result[i]->name = (char *)g_strdup(voice);
+		nlang = GetNLangueVoixKaliStd(i + 1);
+		GetNomLangueKali(nlang, language);
+		result[i]->language = (char *)g_strdup(language);
+		result[i]->variant = NULL;
+	}
+	result[i] = NULL;
 
-  g_free(voice);
-  voice = NULL;
-  g_free(language);
-  language = NULL;
-  
-  return result;
+	g_free(voice);
+	voice = NULL;
+	g_free(language);
+	language = NULL;
+
+	return result;
 }
