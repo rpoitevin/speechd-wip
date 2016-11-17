@@ -99,7 +99,7 @@ KALI_DIR = /usr/lib/kali
 sd_kali_SOURCES = kali.cpp $(audio_SOURCES) $(common_SOURCES)
 sd_kali_LDADD = $(top_builddir)/src/common/libcommon.la \
 	$(audio_dlopen_modules) \
-	-lasound -lpthread -L$(KALI_DIR)/Kali -lKali -L$(KALI_DIR)/KGlobal -lKGlobal -L$(KALI_DIR)/KTrans -lKTrans -L$(KALI_DIR)/KParle -lKParle -L$(KALI_DIR)/KAnalyse -lKAnalyse \
+	-lKali -lKGlobal -lKTrans -lKParle -lKAnalyse \
 	$(common_LDADD)
 endif
 
