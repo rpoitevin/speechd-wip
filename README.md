@@ -8,6 +8,7 @@ The below listed branches are being worked on. Once the functionality in a branc
 
 * [wip/audio-in-server](https://github.com/TheMuso/speechd-wip/tree/wip/audio-in-server)
 * [wip/gsettings-migration](https://github.com/TheMuso/speechd-wip/tree/wip/gsettings-migration)
+* [wip/kali](https://github.com/TheMuso/speechd-wip/tree/wip/kali)
 
 # Contributions
 Contributions are welcome. Feel free to submit contributions either in the form of github merge requests, and patches/pull requests on the [Speech Dispatcher mailing list](http://lists.freebsoft.org/mailman/listinfo/speechd). It is assumed that your github merge requests are against this repository. If posting to the mailing list, please clearly indicate which repository your request or patch is for.
