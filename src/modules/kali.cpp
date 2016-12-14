@@ -85,8 +85,6 @@ MOD_OPTION_1_INT(KaliNormalPitch);
 MOD_OPTION_1_INT(KaliMaxPitch);
 MOD_OPTION_1_STR(KaliVoiceParameters);
 
-char kali_wave_file[] = "/tmp/sd_kaliXXXXXX";
-
 /* Public functions */
 
 int module_load(void)
@@ -129,19 +127,13 @@ int module_init(char **status_info)
 	info = g_string_new("");
 
 	/* Init kali and register a new voice */
-	if (mkstemp(kali_wave_file) < 0) {
-		DBG("Kali: cannot create temporary wave file");
-		g_strdup("The module couldn't create temporary wave file");
-		return -1;
-	}
 	initGlobal();
 	initParle();
 	initTrans();
 	initAnalyse();
 	initKali();
 	SetSortieSonMultiKaliStd(0, false);	//sound output
-	SetSortieWaveMultiKaliStd(0, true);	//output to wave
-	SetNomFichierWaveMultiKaliStd(0, kali_wave_file);	//wave file name
+	SetSortieBufMultiKaliStd(0, true);	//Buffer output
 	SetDebitKali(KaliNormalRate);
 	SetVolumeKali(KaliNormalVolume);
 	SetHauteurKali(KaliNormalPitch);
@@ -272,11 +264,6 @@ int module_close(void)
 
 /* Internal functions */
 
-void kali_strip_silence(AudioTrack * track)
-{
-
-}
-
 void *_kali_speak(void *nothing)
 {
 	AudioTrack track;
@@ -285,6 +272,7 @@ void *_kali_speak(void *nothing)
 #else
 	AudioFormat format = SPD_AUDIO_LE;
 #endif
+	const AudioTrackKali *wav;
 	unsigned int pos;
 	char *buf;
 	int bytes;
@@ -341,30 +329,43 @@ void *_kali_speak(void *nothing)
 
 				DBG("Trying to synthesize text");
 				MessageKali((unsigned char *)buf);
-				while (QueryIndexKali() > 0) ;	//waiting for the end of message
+				while (QueryIndexKali() > 0)
+					sleep(0);
+				wav =
+				    (const AudioTrackKali *)
+				    GetBufMultiKaliStd(0);
 
-				if (kali_stop) {
+				if (wav == NULL) {
 					DBG("Stop in child, terminating");
 					kali_speaking = 0;
 					module_report_event_stop();
 					break;
 				}
-				DBG("Playing part of the message");
-				ret = module_play_file(kali_wave_file);
-				if (ret < 0)
-					DBG("ERROR: failed to play the track");
-				unlink(kali_wave_file);
-				if (kali_stop) {
-					DBG("Stop in child, terminating (s)");
-					kali_speaking = 0;
-					module_report_event_stop();
-					break;
-				}
-				if (kali_stop) {
-					DBG("Stop in child, terminating (s)");
-					kali_speaking = 0;
-					module_report_event_stop();
-					break;
+
+				track.num_samples = wav->num_samples;
+				track.num_channels = wav->num_channels;
+				track.sample_rate = wav->sample_rate;
+				track.bits = wav->bits;
+				track.samples = (signed short *)wav->samples;
+
+				DBG("Got %d samples", track.num_samples);
+				if (track.samples != NULL) {
+					if (kali_stop) {
+						DBG("Stop in child, terminating");
+						kali_speaking = 0;
+						module_report_event_stop();
+						break;
+					}
+					DBG("Playing part of the message");
+					ret = module_tts_output(track, format);
+					if (ret < 0)
+						DBG("ERROR: failed to play the track");
+					if (kali_stop) {
+						DBG("Stop in child, terminating (s)");
+						kali_speaking = 0;
+						module_report_event_stop();
+						break;
+					}
 				}
 			} else if (bytes == -1) {
 				DBG("End of data in speaking thread");
@@ -433,12 +434,19 @@ static void kali_set_pitch(signed int pitch)
 
 void kali_set_punctuation_mode(SPDPunctuation punct)
 {
-	if (punct == SPD_PUNCT_NONE)
+	switch (punct) {
+	case SPD_PUNCT_NONE:
 		SetModeLectureKali(0);
-	if (punct == SPD_PUNCT_SOME)
+		break;
+	case SPD_PUNCT_SOME:
 		SetModeLectureKali(1);
-	if (punct == SPD_PUNCT_ALL)
+		break;
+	case SPD_PUNCT_ALL:
 		SetModeLectureKali(2);
+		break;
+	default:
+		break;
+	}
 }
 
 static void kali_set_voice(char *voice)
