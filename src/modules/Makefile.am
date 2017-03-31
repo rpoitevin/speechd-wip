@@ -93,4 +93,20 @@ sd_pico_LDADD = $(top_builddir)/src/common/libcommon.la \
 	$(common_LDADD)
 endif
 
+#if baratinoo_support
+# FIXME: configure.ac
+BARATINOO_DIR ?= /path/to/Voxygen_TTS_SDK_C_linux
+BARATINOO_LDADD = -lpthread -ldl
+BARATINOO_LIBDIR = $(BARATINOO_DIR)/bin/linx64
+BARATINOO_INCLUDEDIR = $(BARATINOO_DIR)/c_api
+
+modulebin_PROGRAMS += sd_baratinoo
+sd_baratinoo_SOURCES = baratinoo.c $(audio_SOURCES) $(common_SOURCES)
+sd_baratinoo_CPPFLAGS = $(AM_CPPFLAGS) -I$(BARATINOO_INCLUDEDIR)
+sd_baratinoo_LDADD = $(top_builddir)/src/common/libcommon.la \
+	$(audio_dlopen_modules) \
+	-L$(BARATINOO_LIBDIR) -lbaratinoo $(BARATINOO_LDADD) \
+	$(common_LDADD)
+#endif
+
 -include $(top_srcdir)/git.mk
