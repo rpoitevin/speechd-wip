@@ -17,9 +17,9 @@ dist_moduleconf_DATA += pico.conf
 dist_moduleconforig_DATA += pico.conf
 endif
 
-#if baratinoo_support
+if baratinoo_support
 dist_moduleconf_DATA += baratinoo.conf
 dist_moduleconforig_DATA += baratinoo.conf
-#endif
+endif
 
 -include $(top_srcdir)/git.mk
