@@ -19,6 +19,34 @@
  * Boston, MA 02110-1301, USA.
  */
 
+/*
+ * Input and output choices.
+ *
+ * - The input is sent to the engine through a BCinputTextBuffer.  There is
+ *   a single one of those at any given time, and it is filled in
+ *   module_speak() and consumed in the synthesis thread.
+ *
+ *   This doesn't use an input callback generating a continuous flow (and
+ *   blocking waiting for more data) even though it would be a fairly nice
+ *   design and would allow not to set speech attributes like volume, pitch and
+ *   rate as often.  This is because the Baratinoo engine has 2 limitations on
+ *   the input callback:
+ *
+ *   * It consumes everything (or at least a lot) up until the callbacks
+ *     reports the input end by returning 0.  Alternatively one could use the
+ *     \flush command followed by a newline, so this is not really limiting.
+ *
+ *   * More problematic, as the buffer callback is expected to feed a single
+ *     input, calling BCpurge() (for handling stop events) unregisters it,
+ *     requiring to re-add it afterward.  This renders the continuous flow a
+ *     lot less useful, as speech attributes like volume, pitch and rate would
+ *     have to be set again.
+ *
+ * - The output uses the output callback.  This is both simple and efficient,
+ *   as there is no intermediate representation of the sound data, and no copy.
+ *   The data is directly fed to the output module without further computation.
+ */
+
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -388,11 +416,40 @@ static gboolean baratinoo_speaking(void)
 	return baratinoo_text_buffer != NULL;
 }
 
+static void append_ssml_as_proprietary(GString *buf, /*const*/ char *data)
+{
+	/* FIXME: we could possibly use SSML mode, but the Baratinoo parser is
+	 * very strict and *requires* "xmlns", "version" and "lang" attributes
+	 * on the <speak> tag, which speech-dispatcher doesn't provide.
+	 *
+	 * Moreover, we need to add tags for volume/rate/pitch so we'd have to
+	 * amend the data anyway. */
+	/* FIXME: really convert the SSML markup */
+	char *stripped = module_strip_ssml(data);
+	const char *p;
+
+	for (p = stripped; *p; p++) {
+		if (*p == '\\') {
+			/* escape the \ by appending a comment so it won't be
+			 * interpreted as a command */
+			g_string_append(buf, "\\\\{}");
+		} else {
+			g_string_append_c(buf, *p);
+		}
+	}
+	g_free(stripped);
+}
+
 int module_speak(gchar *data, size_t bytes, SPDMessageType msgtype)
 {
-	gchar *stripped = NULL;
+	GString *buffer = NULL;
 
 	DBG("write()\n");
+
+	assert(msg_settings.rate >= -100 && msg_settings.rate <= +100);
+	assert(msg_settings.pitch >= -100 && msg_settings.pitch <= +100);
+	assert(msg_settings.pitch_range >= -100 && msg_settings.pitch_range <= +100);
+	assert(msg_settings.volume >= -100 && msg_settings.volume <= +100);
 
 	if (baratinoo_speaking()) {
 		// FIXME: append to a queue?
@@ -402,15 +459,14 @@ int module_speak(gchar *data, size_t bytes, SPDMessageType msgtype)
 
 	baratinoo_stop_requested = FALSE;
 
-	/* Setting speech parameters. */
+	/* select voice following parameters.  we don't use tags for this as
+	 * we need to do some computation on our end anyway and need pass an
+	 * ID when creating the buffer too */
 	UPDATE_STRING_PARAMETER(voice.language, baratinoo_set_language);
 	UPDATE_PARAMETER(voice_type, baratinoo_set_voice);
 	UPDATE_STRING_PARAMETER(voice.name, baratinoo_set_synthesis_voice);
 
-	/* FIXME: we should use SSML mode, but the Baratinoo parser is very
-	 * strict and *requires* "xmlns", "version" and "lang" attributes on
-	 * the <speak> tag, which speech-dispatcher doesn't provide. */
-	baratinoo_text_buffer = BCinputTextBufferNew(BARATINOO_NO_PARSING,
+	baratinoo_text_buffer = BCinputTextBufferNew(BARATINOO_PROPRIETARY_PARSING,
 						     BARATINOO_UTF8,
 						     baratinoo_voice, 0);
 	if (! baratinoo_text_buffer) {
@@ -418,13 +474,43 @@ int module_speak(gchar *data, size_t bytes, SPDMessageType msgtype)
 		goto err;
 	}
 
-	stripped = module_strip_ssml(data);
-	if (!BCinputTextBufferInit(baratinoo_text_buffer, stripped)) {
+	buffer = g_string_new(NULL);
+
+	/* Apply speech parameters */
+	if (msg_settings.rate != 0) {
+		g_string_append_printf(buffer, "\\rate{%+d%%}\n",
+				       msg_settings.rate);
+	}
+	if (msg_settings.pitch != 0 || msg_settings.pitch_range != 0) {
+		g_string_append_printf(buffer, "\\pitch{%+d%% %+d%%}\n",
+				       msg_settings.pitch,
+				       msg_settings.pitch_range);
+	}
+	if (msg_settings.volume != 0) {
+		g_string_append_printf(buffer, "\\volume{%+d%%}\n",
+				       msg_settings.volume);
+	}
+
+	switch (msgtype) {
+	case SPD_MSGTYPE_SPELL: /* FIXME: use \spell one day? */
+	case SPD_MSGTYPE_CHAR:
+		g_string_append(buffer, "\\sayas<{characters}");
+		append_ssml_as_proprietary(buffer, data);
+		g_string_append(buffer, "\\sayas>");
+		break;
+	default: /* FIXME: */
+	case SPD_MSGTYPE_TEXT:
+		append_ssml_as_proprietary(buffer, data);
+		break;
+	}
+
+	DBG(DBG_MODNAME " Sending buffer: %s", buffer->str);
+	if (!BCinputTextBufferInit(baratinoo_text_buffer, buffer->str)) {
 		DBG("Failed to initialize input buffer");
 		goto err;
 	}
-	g_free(stripped);
-	stripped = NULL;
+
+	g_string_free(buffer, TRUE);
 
 	sem_post(&baratinoo_semaphore);
 
@@ -432,7 +518,8 @@ int module_speak(gchar *data, size_t bytes, SPDMessageType msgtype)
 	return bytes;
 
 err:
-	g_free(stripped);
+	if (buffer)
+		g_string_free(buffer, TRUE);
 	if (baratinoo_text_buffer)
 		BCinputTextBufferDelete(baratinoo_text_buffer);
 
