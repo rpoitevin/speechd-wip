@@ -209,6 +209,9 @@ int module_init(char **status_info)
 	}
 	baratinoo_voice_list[i] = NULL;
 
+	BCsetOutputSignal(baratinoo_engine, baratinoo_output_signal_cb,
+			  NULL, BARATINOO_PCM, 16000 /* default frequency */);
+
 	sem_init(&baratinoo_semaphore, 0, 0);
 
 	DBG("Baratinoo: creating new thread for baratinoo_speak\n");
@@ -225,9 +228,6 @@ int module_init(char **status_info)
 			     "supports threads, please report a bug.");
 		return -1;
 	}
-
-	BCsetOutputSignal(baratinoo_engine, baratinoo_output_signal_cb,
-			  NULL, BARATINOO_PCM, 16000 /* default frequency */);
 
 	DBG("Baratinoo initialized successfully.");
 	*status_info = g_strdup("Baratinoo initialized successfully.");
