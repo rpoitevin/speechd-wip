@@ -684,22 +684,23 @@ void *_baratinoo_speak(void *nothing)
 
 		module_report_event_begin();
 		do {
-			if (baratinoo_close_requested)
-				break;
-			else if (baratinoo_stop_requested) {
+			if (baratinoo_stop_requested || baratinoo_close_requested) {
 				state = BCpurge(baratinoo_engine);
 				baratinoo_stop_requested = FALSE;
-			}
-			else
+				module_report_event_stop();
+				if (baratinoo_close_requested)
+					break;
+			} else {
 				state = BCprocessLoop(baratinoo_engine, 100);
+				if (state == BARATINOO_INITIALIZED)
+					module_report_event_end();
+			}
 			if (state == BARATINOO_EVENT) {
 				/*BaratinooEvent ttsEvent = BCgetEvent(engine);*/
 				DBG("Received an event");
 			}
 		} while (state == BARATINOO_RUNNING || state == BARATINOO_EVENT);
 		DBG("leaving TTS loop state=%d", state);
-
-		module_report_event_end();
 
 		BCinputTextBufferDelete(baratinoo_text_buffer);
 		baratinoo_text_buffer = NULL;
