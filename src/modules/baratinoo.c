@@ -416,7 +416,47 @@ static gboolean baratinoo_speaking(void)
 	return baratinoo_text_buffer != NULL;
 }
 
-static void append_ssml_as_proprietary(GString *buf, /*const*/ char *data)
+static void ssml2baratinoo_start_element(GMarkupParseContext *ctx,
+					 const gchar *element,
+					 const gchar **attribute_names,
+					 const gchar **attribute_values,
+					 gpointer buffer, GError **error)
+{
+	if (strcmp(element, "mark") == 0) {
+		const gchar *name = NULL;
+		guint i;
+
+		/* find the mark name */
+		for (i = 0; !name && attribute_names[i]; i++) {
+			if (strcmp(attribute_names[i], "name") == 0)
+				name = attribute_values[i];
+		}
+
+		g_string_append_printf(buffer, "\\mark{%s}", name ? name : "");
+	} else {
+		/* ignore other elements */
+		/* TODO: handle more elements */
+	}
+}
+
+static void ssml2baratinoo_text(GMarkupParseContext *ctx,
+				const gchar *text, gsize len,
+				gpointer buffer, GError **error)
+{
+	gsize i;
+
+	for (i = 0; i < len; i++) {
+		if (text[i] == '\\') {
+			/* escape the \ by appending a comment so it won't be
+			 * interpreted as a command */
+			g_string_append(buffer, "\\\\{}");
+		} else {
+			g_string_append_c(buffer, text[i]);
+		}
+	}
+}
+
+static void append_ssml_as_proprietary(GString *buf, const char *data, gsize size)
 {
 	/* FIXME: we could possibly use SSML mode, but the Baratinoo parser is
 	 * very strict and *requires* "xmlns", "version" and "lang" attributes
@@ -424,20 +464,22 @@ static void append_ssml_as_proprietary(GString *buf, /*const*/ char *data)
 	 *
 	 * Moreover, we need to add tags for volume/rate/pitch so we'd have to
 	 * amend the data anyway. */
-	/* FIXME: really convert the SSML markup */
-	char *stripped = module_strip_ssml(data);
-	const char *p;
+	static const GMarkupParser parser = {
+		.start_element = ssml2baratinoo_start_element,
+		.text = ssml2baratinoo_text,
+	};
+	GMarkupParseContext *ctx;
+	GError *err = NULL;
 
-	for (p = stripped; *p; p++) {
-		if (*p == '\\') {
-			/* escape the \ by appending a comment so it won't be
-			 * interpreted as a command */
-			g_string_append(buf, "\\\\{}");
-		} else {
-			g_string_append_c(buf, *p);
-		}
+	ctx = g_markup_parse_context_new(&parser, G_MARKUP_TREAT_CDATA_AS_TEXT,
+					 buf, NULL);
+	if (!g_markup_parse_context_parse(ctx, data, size, &err) ||
+	    !g_markup_parse_context_end_parse(ctx, &err)) {
+		DBG(DBG_MODNAME " Failed to convert SSML: %s", err->message);
+		g_error_free(err);
 	}
-	g_free(stripped);
+
+	g_markup_parse_context_free(ctx);
 }
 
 int module_speak(gchar *data, size_t bytes, SPDMessageType msgtype)
@@ -495,12 +537,12 @@ int module_speak(gchar *data, size_t bytes, SPDMessageType msgtype)
 	case SPD_MSGTYPE_SPELL: /* FIXME: use \spell one day? */
 	case SPD_MSGTYPE_CHAR:
 		g_string_append(buffer, "\\sayas<{characters}");
-		append_ssml_as_proprietary(buffer, data);
+		append_ssml_as_proprietary(buffer, data, bytes);
 		g_string_append(buffer, "\\sayas>");
 		break;
 	default: /* FIXME: */
 	case SPD_MSGTYPE_TEXT:
-		append_ssml_as_proprietary(buffer, data);
+		append_ssml_as_proprietary(buffer, data, bytes);
 		break;
 	}
 
