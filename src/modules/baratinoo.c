@@ -240,6 +240,8 @@ int module_init(char **status_info)
 	BCsetOutputSignal(baratinoo_engine, baratinoo_output_signal_cb,
 			  NULL, BARATINOO_PCM, 16000 /* default frequency */);
 
+	BCsetWantedEvent(baratinoo_engine, BARATINOO_MARKER_EVENT);
+
 	sem_init(&baratinoo_semaphore, 0, 0);
 
 	DBG("Baratinoo: creating new thread for baratinoo_speak\n");
@@ -687,6 +689,7 @@ void *_baratinoo_speak(void *nothing)
 			if (baratinoo_stop_requested || baratinoo_close_requested) {
 				state = BCpurge(baratinoo_engine);
 				baratinoo_stop_requested = FALSE;
+				/* FIXME: report marks *before* STOP? */
 				module_report_event_stop();
 				if (baratinoo_close_requested)
 					break;
@@ -696,8 +699,10 @@ void *_baratinoo_speak(void *nothing)
 					module_report_event_end();
 			}
 			if (state == BARATINOO_EVENT) {
-				/*BaratinooEvent ttsEvent = BCgetEvent(engine);*/
-				DBG("Received an event");
+				BaratinooEvent event = BCgetEvent(baratinoo_engine);
+				if (event.type == BARATINOO_MARKER_EVENT) {
+					module_report_index_mark((char *) event.data.marker.name);
+				}
 			}
 		} while (state == BARATINOO_RUNNING || state == BARATINOO_EVENT);
 		DBG("leaving TTS loop state=%d", state);
