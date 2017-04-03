@@ -416,6 +416,20 @@ static gboolean baratinoo_speaking(void)
 	return baratinoo_text_buffer != NULL;
 }
 
+/* locates a string in a NULL-terminated array of strings
+ * Returns -1 if not found, the index otherwise. */
+static int attribute_index(const char **names, const char *name)
+{
+	int i;
+
+	for (i = 0; names && names[i] != NULL; i++) {
+		if (strcmp(names[i], name) == 0)
+			return i;
+	}
+
+	return -1;
+}
+
 static void ssml2baratinoo_start_element(GMarkupParseContext *ctx,
 					 const gchar *element,
 					 const gchar **attribute_names,
@@ -423,19 +437,25 @@ static void ssml2baratinoo_start_element(GMarkupParseContext *ctx,
 					 gpointer buffer, GError **error)
 {
 	if (strcmp(element, "mark") == 0) {
-		const gchar *name = NULL;
-		guint i;
-
-		/* find the mark name */
-		for (i = 0; !name && attribute_names[i]; i++) {
-			if (strcmp(attribute_names[i], "name") == 0)
-				name = attribute_values[i];
-		}
-
-		g_string_append_printf(buffer, "\\mark{%s}", name ? name : "");
+		int i = attribute_index(attribute_names, "name");
+		g_string_append_printf(buffer, "\\mark{%s}",
+				       i < 0 ? "" : attribute_values[i]);
+	} else if (strcmp(element, "emphasis") == 0) {
+		int i = attribute_index(attribute_names, "level");
+		g_string_append_printf(buffer, "\\emph<{%s}",
+				       i < 0 ? "" : attribute_values[i]);
 	} else {
 		/* ignore other elements */
 		/* TODO: handle more elements */
+	}
+}
+
+static void ssml2baratinoo_end_element(GMarkupParseContext *ctx,
+				       const gchar *element,
+				       gpointer buffer, GError **error)
+{
+	if (strcmp(element, "emphasis") == 0) {
+		g_string_append(buffer, "\\emph>{}");
 	}
 }
 
@@ -466,6 +486,7 @@ static void append_ssml_as_proprietary(GString *buf, const char *data, gsize siz
 	 * amend the data anyway. */
 	static const GMarkupParser parser = {
 		.start_element = ssml2baratinoo_start_element,
+		.end_element = ssml2baratinoo_end_element,
 		.text = ssml2baratinoo_text,
 	};
 	GMarkupParseContext *ctx;
