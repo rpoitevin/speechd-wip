@@ -732,19 +732,19 @@ void *_baratinoo_speak(void *nothing)
 				state = BCprocessLoop(baratinoo_engine, 100);
 				if (state == BARATINOO_INITIALIZED)
 					module_report_event_end();
-			}
-			if (state == BARATINOO_EVENT) {
-				BaratinooEvent event = BCgetEvent(baratinoo_engine);
-				if (event.type == BARATINOO_MARKER_EVENT) {
-					DBG(DBG_MODNAME " Reached mark '%s'", event.data.marker.name);
-					module_report_index_mark((char *) event.data.marker.name);
-					/* if reached a spd mark and pausing requested, stop */
-					if (baratinoo_pause_requested &&
-					    g_str_has_prefix(event.data.marker.name, "__spd_")) {
-						DBG(DBG_MODNAME " Pausing in thread");
-						state = BCpurge(baratinoo_engine);
-						baratinoo_pause_requested = FALSE;
-						module_report_event_pause();
+				else if (state == BARATINOO_EVENT) {
+					BaratinooEvent event = BCgetEvent(baratinoo_engine);
+					if (event.type == BARATINOO_MARKER_EVENT) {
+						DBG(DBG_MODNAME " Reached mark '%s'", event.data.marker.name);
+						module_report_index_mark((char *) event.data.marker.name);
+						/* if reached a spd mark and pausing requested, stop */
+						if (baratinoo_pause_requested &&
+						    g_str_has_prefix(event.data.marker.name, "__spd_")) {
+							DBG(DBG_MODNAME " Pausing in thread");
+							state = BCpurge(baratinoo_engine);
+							baratinoo_pause_requested = FALSE;
+							module_report_event_pause();
+						}
 					}
 				}
 			}
