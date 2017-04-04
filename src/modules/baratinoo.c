@@ -270,15 +270,48 @@ SPDVoice **module_list_voices(void)
 	return baratinoo_voice_list;
 }
 
+static int lang_match_level(const BaratinooVoiceInfo *info, const char *lang)
+{
+	int level = 0;
+
+	if (g_ascii_strcasecmp(lang, info->language) == 0)
+		level += 10;
+	else {
+		gchar **a = g_strsplit_set(info->language, "-", 2);
+		gchar **b = g_strsplit_set(lang, "-", 2);
+
+		/* language */
+		if (g_ascii_strcasecmp(a[0], b[0]) == 0)
+			level += 8;
+		else if (g_ascii_strcasecmp(info->iso639, b[0]) == 0)
+			level += 8;
+		else if (g_ascii_strncasecmp(a[0], b[0], 2) == 0)
+			level += 5; /* partial match */
+		/* region */
+		if (a[1] && b[1] && g_ascii_strcasecmp(a[1], b[1]) == 0)
+			level += 2;
+		else if (b[1] && g_ascii_strcasecmp(info->iso3166, b[1]) == 0)
+			level += 2;
+		else if (a[1] && b[1] && g_ascii_strncasecmp(a[1], b[1], 2) == 0)
+			level += 1; /* partial match */
+
+		g_strfreev(a);
+		g_strfreev(b);
+	}
+
+	DBG("lang_match_level({language=%s, iso639=%s, iso3166=%s}, lang=%s) = %d",
+	    info->language, info->iso639, info->iso3166, lang, level);
+
+	return level;
+}
+
 /* return: <0 @a is best, >0 @b is best */
 static int sort_voice(const BaratinooVoiceInfo *a, const BaratinooVoiceInfo *b, const char *lang, SPDVoiceType voice_code)
 {
 	int cmp = 0;
 
-	if (strcmp(lang, a->iso639) == 0)
-		cmp--;
-	if (strcmp(lang, b->iso639) == 0)
-		cmp++;
+	cmp -= lang_match_level(a, lang);
+	cmp += lang_match_level(b, lang);
 
 	if (strcmp(a->gender, b->gender) != 0) {
 		const char *gender;
