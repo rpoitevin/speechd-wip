@@ -73,9 +73,9 @@ DECLARE_DEBUG();
 /* Thread and process control */
 static SPDVoice **baratinoo_voice_list = NULL;
 
-gboolean baratinoo_pause_requested = FALSE;
-gboolean baratinoo_stop_requested = FALSE;
-gboolean baratinoo_close_requested = FALSE;
+static gboolean baratinoo_pause_requested = FALSE;
+static gboolean baratinoo_stop_requested = FALSE;
+static gboolean baratinoo_close_requested = FALSE;
 
 static pthread_t baratinoo_speak_thread;
 static sem_t baratinoo_semaphore;
