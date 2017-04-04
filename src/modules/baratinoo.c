@@ -585,16 +585,16 @@ int module_speak(gchar *data, size_t bytes, SPDMessageType msgtype)
 
 	/* Apply speech parameters */
 	if (msg_settings.rate != 0) {
-		g_string_append_printf(buffer, "\\rate{%+d%%}\n",
+		g_string_append_printf(buffer, "\\rate{%+d%%}",
 				       msg_settings.rate);
 	}
 	if (msg_settings.pitch != 0 || msg_settings.pitch_range != 0) {
-		g_string_append_printf(buffer, "\\pitch{%+d%% %+d%%}\n",
+		g_string_append_printf(buffer, "\\pitch{%+d%% %+d%%}",
 				       msg_settings.pitch,
 				       msg_settings.pitch_range);
 	}
 	if (msg_settings.volume != 0) {
-		g_string_append_printf(buffer, "\\volume{%+d%%}\n",
+		g_string_append_printf(buffer, "\\volume{%+d%%}",
 				       msg_settings.volume);
 	}
 
@@ -603,7 +603,7 @@ int module_speak(gchar *data, size_t bytes, SPDMessageType msgtype)
 	case SPD_MSGTYPE_CHAR:
 		g_string_append(buffer, "\\sayas<{characters}");
 		append_ssml_as_proprietary(buffer, data, bytes);
-		g_string_append(buffer, "\\sayas>");
+		g_string_append(buffer, "\\sayas>{}");
 		break;
 	default: /* FIXME: */
 	case SPD_MSGTYPE_TEXT:
