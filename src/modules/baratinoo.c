@@ -222,6 +222,7 @@ int module_init(char **status_info)
 	DBG("Got %d available voices:", n_voices);
 	for (i = 0; i < n_voices; i++) {
 		SPDVoice *voice;
+		const char *dash;
 		BaratinooVoiceInfo voice_info = BCgetVoiceInfo(baratinoo_engine, i);
 
 		DBG("\tVoice #%d: name=%s, language=%s, gender=%s",
@@ -229,9 +230,15 @@ int module_init(char **status_info)
 
 		voice = g_malloc0(sizeof *voice);
 		voice->name = g_strdup(voice_info.name);
-		// FIXME: check the format
-		voice->language = g_strndup(voice_info.iso639, 2);
-		voice->variant = g_strdup(voice_info.variant);
+
+		dash = strchr(voice_info.language, '-');
+		if (dash) {
+			voice->language = g_strndup(voice_info.language,
+						    dash - voice_info.language);
+			voice->variant = g_ascii_strdown(dash + 1, -1);
+		} else {
+			voice->language = g_strdup(voice_info.language);
+		}
 
 		baratinoo_voice_list[i] = voice;
 	}
