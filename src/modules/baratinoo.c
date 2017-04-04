@@ -472,11 +472,6 @@ static void baratinoo_set_synthesis_voice(char *synthesis_voice)
 	    synthesis_voice);
 }
 
-static gboolean baratinoo_speaking(void)
-{
-	return baratinoo_text_buffer != NULL;
-}
-
 /* locates a string in a NULL-terminated array of strings
  * Returns -1 if not found, the index otherwise. */
 static int attribute_index(const char **names, const char *name)
@@ -575,9 +570,8 @@ int module_speak(gchar *data, size_t bytes, SPDMessageType msgtype)
 	assert(msg_settings.pitch_range >= -100 && msg_settings.pitch_range <= +100);
 	assert(msg_settings.volume >= -100 && msg_settings.volume <= +100);
 
-	if (baratinoo_speaking()) {
-		// FIXME: append to a queue?
-		DBG(DBG_MODNAME "Speaking when requested to write");
+	if (baratinoo_text_buffer != NULL) {
+		DBG(DBG_MODNAME "WARNING: module_speak() called during speech");
 		return 0;
 	}
 
