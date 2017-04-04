@@ -387,7 +387,7 @@ static int sort_voice(const BaratinooVoiceInfo *a, const BaratinooVoiceInfo *b, 
 	return cmp;
 }
 
-/* Given a language code and SD voice code, sets the espeak voice. */
+/* Given a language code and SD voice code, sets the voice. */
 static void baratinoo_set_language_and_voice(char *lang, SPDVoiceType voice_code)
 {
 	int i;
