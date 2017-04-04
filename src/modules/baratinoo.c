@@ -189,6 +189,7 @@ int module_init(char **status_info)
 
 	*status_info = NULL;
 
+	baratinoo_pause_requested = FALSE;
 	baratinoo_stop_requested = FALSE;
 	baratinoo_close_requested = FALSE;
 
@@ -654,10 +655,7 @@ err:
 int module_stop(void)
 {
 	DBG(DBG_MODNAME "Stop requested");
-	if (!baratinoo_stop_requested) {
-		baratinoo_stop_requested = TRUE;
-		sem_post(&baratinoo_semaphore);
-	}
+	baratinoo_stop_requested = TRUE;
 
 	return 0;
 }
@@ -665,10 +663,7 @@ int module_stop(void)
 size_t module_pause(void)
 {
 	DBG(DBG_MODNAME "Pause requested");
-	if (!baratinoo_pause_requested) {
-		DBG(DBG_MODNAME "Pausing");
-		baratinoo_pause_requested = TRUE;
-	}
+	baratinoo_pause_requested = TRUE;
 
 	return 0;
 }
