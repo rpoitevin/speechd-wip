@@ -73,6 +73,7 @@ DECLARE_DEBUG();
 /* Thread and process control */
 static SPDVoice **baratinoo_voice_list = NULL;
 
+gboolean baratinoo_pause_requested = FALSE;
 gboolean baratinoo_stop_requested = FALSE;
 gboolean baratinoo_close_requested = FALSE;
 
@@ -562,6 +563,7 @@ int module_speak(gchar *data, size_t bytes, SPDMessageType msgtype)
 		return 0;
 	}
 
+	baratinoo_pause_requested = FALSE;
 	baratinoo_stop_requested = FALSE;
 
 	/* select voice following parameters.  we don't use tags for this as
@@ -644,17 +646,13 @@ int module_stop(void)
 
 size_t module_pause(void)
 {
-	// FIXME: ?
 	DBG(DBG_MODNAME " Pause requested");
-	if (baratinoo_speaking()) {
-		DBG(DBG_MODNAME " Pause not supported, stopping");
-
-		module_stop();
-
-		return -1;
-	} else {
-		return 0;
+	if (!baratinoo_pause_requested) {
+		DBG(DBG_MODNAME " Pausing");
+		baratinoo_pause_requested = TRUE;
 	}
+
+	return 0;
 }
 
 int module_close(void)
@@ -729,7 +727,6 @@ void *_baratinoo_speak(void *nothing)
 			if (baratinoo_stop_requested || baratinoo_close_requested) {
 				state = BCpurge(baratinoo_engine);
 				baratinoo_stop_requested = FALSE;
-				/* FIXME: report marks *before* STOP? */
 				module_report_event_stop();
 				if (baratinoo_close_requested)
 					break;
@@ -741,7 +738,16 @@ void *_baratinoo_speak(void *nothing)
 			if (state == BARATINOO_EVENT) {
 				BaratinooEvent event = BCgetEvent(baratinoo_engine);
 				if (event.type == BARATINOO_MARKER_EVENT) {
+					DBG(DBG_MODNAME " Reached mark '%s'", event.data.marker.name);
 					module_report_index_mark((char *) event.data.marker.name);
+					/* if reached a spd mark and pausing requested, stop */
+					if (baratinoo_pause_requested &&
+					    g_str_has_prefix(event.data.marker.name, "__spd_")) {
+						DBG(DBG_MODNAME " Pausing in thread");
+						state = BCpurge(baratinoo_engine);
+						baratinoo_pause_requested = FALSE;
+						module_report_event_pause();
+					}
 				}
 			}
 		} while (state == BARATINOO_RUNNING || state == BARATINOO_EVENT);
