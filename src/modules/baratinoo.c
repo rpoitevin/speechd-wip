@@ -728,8 +728,6 @@ void *_baratinoo_speak(void *nothing)
 				state = BCpurge(baratinoo_engine);
 				baratinoo_stop_requested = FALSE;
 				module_report_event_stop();
-				if (baratinoo_close_requested)
-					break;
 			} else {
 				state = BCprocessLoop(baratinoo_engine, 100);
 				if (state == BARATINOO_INITIALIZED)
