@@ -73,14 +73,19 @@ DECLARE_DEBUG();
 /* Thread and process control */
 static SPDVoice **baratinoo_voice_list = NULL;
 
+/* Request flags */
 static gboolean baratinoo_pause_requested = FALSE;
 static gboolean baratinoo_stop_requested = FALSE;
 static gboolean baratinoo_close_requested = FALSE;
 
+/* Thread primitives */
 static pthread_t baratinoo_speak_thread;
 static sem_t baratinoo_semaphore;
 
 static BCengine baratinoo_engine = NULL;
+/* The buffer consumed by the TTS engine.  It is NULL when the TTS thread is
+ * ready to accept new input.  Otherwise, the thread is in the process of
+ * synthesizing speech. */
 static BCinputTextBuffer baratinoo_text_buffer = NULL;
 static int baratinoo_voice = 0;
 
@@ -113,6 +118,16 @@ int module_load(void)
 	return 0;
 }
 
+/**
+ * @brief Logs a message from Baratinoo
+ * @param level Message importance.
+ * @param engine_num ID of the engine that emitted the message, or 0 if it is a
+ *                   library message.
+ * @param source Message category.
+ * @param data Private data, unused.
+ * @param format printf-like @p format.
+ * @param args arguments for @p format.
+ */
 void baratinoo_trace_cb(BaratinooTraceLevel level, int engine_num, const char *source, const void *data, const char *format, va_list args)
 {
 	const char *prefix = "";
@@ -155,6 +170,17 @@ void baratinoo_trace_cb(BaratinooTraceLevel level, int engine_num, const char *s
 	fprintf(stderr, "\n");
 }
 
+/**
+ * @brief Output (sound) callback
+ * @param privateData Unused.
+ * @param address Audio samples.
+ * @param length Length of @p address, in bytes.
+ * @returns 0.
+ *
+ * Called by the engine during speech synthesis.
+ *
+ * @see BCprocessLoop()
+ */
 static int baratinoo_output_signal_cb(void *privateData, const void *address, int length)
 {
 	AudioTrack track;
@@ -294,6 +320,14 @@ SPDVoice **module_list_voices(void)
 	return baratinoo_voice_list;
 }
 
+/**
+ * @brief Matches a Baratinoo voice info against a SPD language
+ * @param info A voice info to match.
+ * @param lang A SPD language to match against.
+ * @returns The quality of the match: the higher the better.
+ *
+ * Gives a score to a voice based on its compatibility with @p lang.
+ */
 static int lang_match_level(const BaratinooVoiceInfo *info, const char *lang)
 {
 	int level = 0;
@@ -329,7 +363,15 @@ static int lang_match_level(const BaratinooVoiceInfo *info, const char *lang)
 	return level;
 }
 
-/* return: <0 @a is best, >0 @b is best */
+/**
+ * @brief Sort two Baratinoo voices by SPD criteria.
+ * @param a A voice info.
+ * @param b Another voice info.
+ * @param lang A SPD language.
+ * @param voice_code A SPD voice code.
+ * @returns < 0 if @p a is best, > 0 if @p b is best, and 0 if they are equally
+ *          matching.  Larger divergence from 0 means better match.
+ */
 static int sort_voice(const BaratinooVoiceInfo *a, const BaratinooVoiceInfo *b, const char *lang, SPDVoiceType voice_code)
 {
 	int cmp = 0;
@@ -410,7 +452,6 @@ static void baratinoo_set_language_and_voice(char *lang, SPDVoiceType voice_code
 		break;
 	}
 
-	// FIXME: thread safety accessing @baratinoo_engine
 	for (i = 0; i < BCgetNumberOfVoices(baratinoo_engine); i++) {
 		if (i == 0) {
 			best_match = i;
@@ -458,7 +499,6 @@ static void baratinoo_set_synthesis_voice(char *synthesis_voice)
 	if (synthesis_voice == NULL)
 		return;
 
-	// FIXME: thread safety accessing @baratinoo_engine
 	for (i = 0; i < BCgetNumberOfVoices(baratinoo_engine); i++) {
 		BaratinooVoiceInfo info = BCgetVoiceInfo(baratinoo_engine, i);
 
@@ -486,6 +526,7 @@ static int attribute_index(const char **names, const char *name)
 	return -1;
 }
 
+/* Markup element start callback */
 static void ssml2baratinoo_start_element(GMarkupParseContext *ctx,
 					 const gchar *element,
 					 const gchar **attribute_names,
@@ -506,6 +547,7 @@ static void ssml2baratinoo_start_element(GMarkupParseContext *ctx,
 	}
 }
 
+/* Markup element end callback */
 static void ssml2baratinoo_end_element(GMarkupParseContext *ctx,
 				       const gchar *element,
 				       gpointer buffer, GError **error)
@@ -515,6 +557,7 @@ static void ssml2baratinoo_end_element(GMarkupParseContext *ctx,
 	}
 }
 
+/* Markup text node callback */
 static void ssml2baratinoo_text(GMarkupParseContext *ctx,
 				const gchar *text, gsize len,
 				gpointer buffer, GError **error)
@@ -532,6 +575,15 @@ static void ssml2baratinoo_text(GMarkupParseContext *ctx,
 	}
 }
 
+/**
+ * @brief Converts SSML data to Baratinoo's proprietary format.
+ * @param buf A buffer to write to.
+ * @param data SSML data to convert.
+ * @param size Length of @p data
+ *
+ * @warning Only a subset of the input SSML is currently translated, the rest
+ *          being discarded.
+ */
 static void append_ssml_as_proprietary(GString *buf, const char *data, gsize size)
 {
 	/* FIXME: we could possibly use SSML mode, but the Baratinoo parser is
@@ -581,6 +633,9 @@ int module_speak(gchar *data, size_t bytes, SPDMessageType msgtype)
 	/* select voice following parameters.  we don't use tags for this as
 	 * we need to do some computation on our end anyway and need pass an
 	 * ID when creating the buffer too */
+	/* NOTE: these functions access the engine, which wouldn't be safe if
+	 *       we didn't know that the thread is sleeping.  But we do know it
+	 *       is, as @c baratinoo_text_buffer is NULL */
 	UPDATE_STRING_PARAMETER(voice.language, baratinoo_set_language);
 	UPDATE_PARAMETER(voice_type, baratinoo_set_voice);
 	UPDATE_STRING_PARAMETER(voice.name, baratinoo_set_synthesis_voice);
@@ -711,6 +766,18 @@ int module_close(void)
 
 /* Internal functions */
 
+/**
+ * @brief Internal TTS thread.
+ * @param nothing Ignore.
+ * @returns NULL.
+ *
+ * The TTS thread.  It waits on @c baratinoo_semaphore to consume input data
+ * from @c baratinoo_text_buffer.
+ *
+ * @see baratinoo_pause_requested
+ * @see baratinoo_stop_requested
+ * @see baratinoo_close_requested
+ */
 void *_baratinoo_speak(void *nothing)
 {
 	BARATINOOC_STATE state;
