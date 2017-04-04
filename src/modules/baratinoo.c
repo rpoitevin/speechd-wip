@@ -64,7 +64,7 @@
 #include "module_utils.h"
 
 #define MODULE_NAME     "baratinoo"
-#define DBG_MODNAME     "Baratinoo:"
+#define DBG_MODNAME     "Baratinoo: "
 #define MODULE_VERSION  "0.1"
 
 #define DEBUG_MODULE 1
@@ -117,7 +117,18 @@ void baratinoo_trace_cb(BaratinooTraceLevel level, int engine_num, const char *s
 {
 	const char *prefix = "";
 
-	switch(level) {
+	if (!Debug) {
+		switch (level) {
+		case BARATINOO_TRACE_INIT:
+		case BARATINOO_TRACE_INFO:
+		case BARATINOO_TRACE_DEBUG:
+			return;
+		default:
+			break;
+		}
+	}
+
+	switch (level) {
 	case BARATINOO_TRACE_ERROR:
 		prefix = "ERROR";
 		break;
@@ -135,6 +146,10 @@ void baratinoo_trace_cb(BaratinooTraceLevel level, int engine_num, const char *s
 		break;
 	}
 
+	if (engine_num == 0)
+		fprintf(stderr, "Baratinoo library: ");
+	else
+		fprintf(stderr, "Baratinoo engine #%d: ", engine_num);
 	fprintf(stderr, "%s: %s ", prefix, source);
 	vfprintf(stderr, format, args);
 	fprintf(stderr, "\n");
@@ -145,7 +160,7 @@ static int baratinoo_output_signal_cb(void *privateData, const void *address, in
 	AudioTrack track;
 
 	if (baratinoo_stop_requested) {
-		DBG("Not playing message because it got stopped");
+		DBG(DBG_MODNAME "Not playing message because it got stopped");
 		return 0;
 	}
 
@@ -155,9 +170,9 @@ static int baratinoo_output_signal_cb(void *privateData, const void *address, in
 	track.bits = 16;
 	track.samples = (short *) address;
 
-	DBG("Playing part of the message");
+	DBG(DBG_MODNAME "Playing part of the message");
 	if (module_tts_output(track, SPD_AUDIO_LE) < 0)
-		DBG("ERROR: failed to play the track");
+		DBG(DBG_MODNAME "ERROR: failed to play the track");
 
 	return 0;
 }
@@ -169,7 +184,7 @@ int module_init(char **status_info)
 	int n_voices;
 	int i;
 
-	DBG("Module init");
+	DBG(DBG_MODNAME "Module init");
 	INIT_INDEX_MARKING();
 
 	*status_info = NULL;
@@ -179,17 +194,17 @@ int module_init(char **status_info)
 
 	/* Init Baratinoo */
 	if (BCinitlib(baratinoo_trace_cb) != BARATINOO_INIT_OK) {
-		DBG("Failed to initialize Baratinoo");
+		DBG(DBG_MODNAME "Failed to initialize library");
 		*status_info = g_strdup("Failed to initialize Baratinoo. "
 					"Make sure your installation is "
-					"properly st up.");
+					"properly set up.");
 		return -1;
 	}
-	DBG("Using Baratinoo %s", BCgetBaratinooVersion());
+	DBG(DBG_MODNAME "Using Baratinoo %s", BCgetBaratinooVersion());
 
 	baratinoo_engine = BCnew(NULL);
 	if (!baratinoo_engine) {
-		DBG("Failed to allocate engine");
+		DBG(DBG_MODNAME "Failed to allocate engine");
 		*status_info = g_strdup("Failed to create Baratinoo engine.");
 
 		BCterminatelib();
@@ -199,7 +214,7 @@ int module_init(char **status_info)
 	BCinit(baratinoo_engine, BaratinooConfigPath);
 	state = BCgetState(baratinoo_engine);
 	if (state != BARATINOO_INITIALIZED) {
-		DBG("Failed to initialize Baratinoo engine");
+		DBG(DBG_MODNAME "Failed to initialize engine");
 		*status_info = g_strdup("Failed to initialize Baratinoo engine. "
 					"Make sure your setup is OK.");
 
@@ -211,22 +226,22 @@ int module_init(char **status_info)
 	/* Find voices */
 	n_voices = BCgetNumberOfVoices(baratinoo_engine);
 	if (n_voices < 1) {
-		DBG("No voice available");
-		*status_info = g_strdup("No Baratinoo voices found. "
-					"Make sure your setup is OK.");
+		DBG(DBG_MODNAME "No voice available");
+		*status_info = g_strdup("No voice found. Make sure your setup "
+					"includes at least one voice.");
 
 		BCdelete(baratinoo_engine);
 		BCterminatelib();
 		return -1;
 	}
 	baratinoo_voice_list = g_malloc_n(n_voices + 1, sizeof *baratinoo_voice_list);
-	DBG("Got %d available voices:", n_voices);
+	DBG(DBG_MODNAME "Got %d available voices:", n_voices);
 	for (i = 0; i < n_voices; i++) {
 		SPDVoice *voice;
 		const char *dash;
 		BaratinooVoiceInfo voice_info = BCgetVoiceInfo(baratinoo_engine, i);
 
-		DBG("\tVoice #%d: name=%s, language=%s, gender=%s",
+		DBG(DBG_MODNAME "\tVoice #%d: name=%s, language=%s, gender=%s",
 		    i, voice_info.name, voice_info.language, voice_info.gender);
 
 		voice = g_malloc0(sizeof *voice);
@@ -252,22 +267,22 @@ int module_init(char **status_info)
 
 	sem_init(&baratinoo_semaphore, 0, 0);
 
-	DBG("Baratinoo: creating new thread for baratinoo_speak\n");
+	DBG(DBG_MODNAME "creating new thread for baratinoo_speak");
 	ret = pthread_create(&baratinoo_speak_thread, NULL, _baratinoo_speak, NULL);
 	if (ret != 0) {
 		BCdelete(baratinoo_engine);
 		BCterminatelib();
 
-		DBG("Baratinoo: thread failed\n");
+		DBG(DBG_MODNAME "thread creation failed");
 		*status_info =
-		    g_strdup("The module couldn't initialize threads "
+		    g_strdup("The module couldn't initialize threads. "
 			     "This could be either an internal problem or an "
 			     "architecture problem. If you are sure your architecture "
 			     "supports threads, please report a bug.");
 		return -1;
 	}
 
-	DBG("Baratinoo initialized successfully.");
+	DBG(DBG_MODNAME "Initialization successfully.");
 	*status_info = g_strdup("Baratinoo initialized successfully.");
 
 	return 0;
@@ -307,7 +322,7 @@ static int lang_match_level(const BaratinooVoiceInfo *info, const char *lang)
 		g_strfreev(b);
 	}
 
-	DBG("lang_match_level({language=%s, iso639=%s, iso3166=%s}, lang=%s) = %d",
+	DBG(DBG_MODNAME "lang_match_level({language=%s, iso639=%s, iso3166=%s}, lang=%s) = %d",
 	    info->language, info->iso639, info->iso3166, lang, level);
 
 	return level;
@@ -366,7 +381,7 @@ static int sort_voice(const BaratinooVoiceInfo *a, const BaratinooVoiceInfo *b, 
 		break;
 	}
 
-	DBG(DBG_MODNAME " Comparing %s <> %s gives %d", a->name, b->name, cmp);
+	DBG(DBG_MODNAME "Comparing %s <> %s gives %d", a->name, b->name, cmp);
 
 	return cmp;
 }
@@ -380,7 +395,8 @@ static void baratinoo_set_language_and_voice(char *lang, SPDVoiceType voice_code
 	int offset = 0; // nth voice we'd like
 	BaratinooVoiceInfo best_info;
 
-	DBG(DBG_MODNAME " set_language_and_voice %s %d", lang, voice_code);
+	DBG(DBG_MODNAME "set_language_and_voice(lang=%s, voice_code=%d)",
+	    lang, voice_code);
 
 	switch (voice_code) {
 	case SPD_MALE3:
@@ -416,9 +432,9 @@ static void baratinoo_set_language_and_voice(char *lang, SPDVoiceType voice_code
 	}
 
 	if (best_match < 0) {
-		DBG("No voice match found, not changing voice.");
+		DBG(DBG_MODNAME "No voice match found, not changing voice.");
 	} else {
-		DBG("Best voice match is %d.", best_match);
+		DBG(DBG_MODNAME "Best voice match is %d.", best_match);
 		baratinoo_voice = best_match;
 	}
 }
@@ -451,7 +467,8 @@ static void baratinoo_set_synthesis_voice(char *synthesis_voice)
 		}
 	}
 
-	DBG(DBG_MODNAME " Failed to set synthesis voice to %s.", synthesis_voice);
+	DBG(DBG_MODNAME "Failed to set synthesis voice to '%s': not found.",
+	    synthesis_voice);
 }
 
 static gboolean baratinoo_speaking(void)
@@ -539,7 +556,7 @@ static void append_ssml_as_proprietary(GString *buf, const char *data, gsize siz
 					 buf, NULL);
 	if (!g_markup_parse_context_parse(ctx, data, size, &err) ||
 	    !g_markup_parse_context_end_parse(ctx, &err)) {
-		DBG(DBG_MODNAME " Failed to convert SSML: %s", err->message);
+		DBG(DBG_MODNAME "Failed to convert SSML: %s", err->message);
 		g_error_free(err);
 	}
 
@@ -550,7 +567,7 @@ int module_speak(gchar *data, size_t bytes, SPDMessageType msgtype)
 {
 	GString *buffer = NULL;
 
-	DBG("write()\n");
+	DBG(DBG_MODNAME "Speech requested");
 
 	assert(msg_settings.rate >= -100 && msg_settings.rate <= +100);
 	assert(msg_settings.pitch >= -100 && msg_settings.pitch <= +100);
@@ -559,7 +576,7 @@ int module_speak(gchar *data, size_t bytes, SPDMessageType msgtype)
 
 	if (baratinoo_speaking()) {
 		// FIXME: append to a queue?
-		DBG("Speaking when requested to write");
+		DBG(DBG_MODNAME "Speaking when requested to write");
 		return 0;
 	}
 
@@ -577,7 +594,7 @@ int module_speak(gchar *data, size_t bytes, SPDMessageType msgtype)
 						     BARATINOO_UTF8,
 						     baratinoo_voice, 0);
 	if (! baratinoo_text_buffer) {
-		DBG("Failed to allocate input buffer");
+		DBG(DBG_MODNAME "Failed to allocate input buffer");
 		goto err;
 	}
 
@@ -611,9 +628,10 @@ int module_speak(gchar *data, size_t bytes, SPDMessageType msgtype)
 		break;
 	}
 
-	DBG(DBG_MODNAME " Sending buffer: %s", buffer->str);
+	DBG(DBG_MODNAME "SSML input: %s", data);
+	DBG(DBG_MODNAME "Sending buffer: %s", buffer->str);
 	if (!BCinputTextBufferInit(baratinoo_text_buffer, buffer->str)) {
-		DBG("Failed to initialize input buffer");
+		DBG(DBG_MODNAME "Failed to initialize input buffer");
 		goto err;
 	}
 
@@ -621,7 +639,7 @@ int module_speak(gchar *data, size_t bytes, SPDMessageType msgtype)
 
 	sem_post(&baratinoo_semaphore);
 
-	DBG(DBG_MODNAME " leaving write() normally");
+	DBG(DBG_MODNAME "leaving module_speak() normally");
 	return bytes;
 
 err:
@@ -635,7 +653,7 @@ err:
 
 int module_stop(void)
 {
-	DBG(DBG_MODNAME " stop()");
+	DBG(DBG_MODNAME "Stop requested");
 	if (!baratinoo_stop_requested) {
 		baratinoo_stop_requested = TRUE;
 		sem_post(&baratinoo_semaphore);
@@ -646,9 +664,9 @@ int module_stop(void)
 
 size_t module_pause(void)
 {
-	DBG(DBG_MODNAME " Pause requested");
+	DBG(DBG_MODNAME "Pause requested");
 	if (!baratinoo_pause_requested) {
-		DBG(DBG_MODNAME " Pausing");
+		DBG(DBG_MODNAME "Pausing");
 		baratinoo_pause_requested = TRUE;
 	}
 
@@ -657,9 +675,9 @@ size_t module_pause(void)
 
 int module_close(void)
 {
-	DBG(DBG_MODNAME " close()");
+	DBG(DBG_MODNAME "close()");
 
-	DBG("Terminating threads");
+	DBG(DBG_MODNAME "Terminating threads");
 
 	baratinoo_stop_requested = TRUE;
 	baratinoo_close_requested = TRUE;
@@ -669,9 +687,9 @@ int module_close(void)
 
 	/* Make sure threads have really exited */
 	pthread_cancel(baratinoo_speak_thread);
-	DBG("Joining threads.");
+	DBG(DBG_MODNAME "Joining threads.");
 	if (pthread_join(baratinoo_speak_thread, NULL) != 0)
-		DBG("Failed to join threads.");
+		DBG(DBG_MODNAME "Failed to join threads.");
 
 	/* destroy voice list */
 	if (baratinoo_voice_list != NULL) {
@@ -697,6 +715,8 @@ int module_close(void)
 
 	sem_destroy(&baratinoo_semaphore);
 
+	DBG(DBG_MODNAME "Module closed.");
+
 	return 0;
 }
 
@@ -710,7 +730,7 @@ void *_baratinoo_speak(void *nothing)
 
 	while (!baratinoo_close_requested) {
 		sem_wait(&baratinoo_semaphore);
-		DBG("Semaphore on");
+		DBG(DBG_MODNAME "Semaphore on");
 
 		if (!baratinoo_text_buffer)
 			continue;
@@ -718,7 +738,7 @@ void *_baratinoo_speak(void *nothing)
 		state = BCinputTextBufferSetInEngine(baratinoo_text_buffer,
 						     baratinoo_engine);
 		if (state != BARATINOO_READY) {
-			DBG("Failed to set input buffer");
+			DBG(DBG_MODNAME "Failed to set input buffer");
 			continue;
 		}
 
@@ -735,12 +755,12 @@ void *_baratinoo_speak(void *nothing)
 				else if (state == BARATINOO_EVENT) {
 					BaratinooEvent event = BCgetEvent(baratinoo_engine);
 					if (event.type == BARATINOO_MARKER_EVENT) {
-						DBG(DBG_MODNAME " Reached mark '%s'", event.data.marker.name);
+						DBG(DBG_MODNAME "Reached mark '%s'", event.data.marker.name);
 						module_report_index_mark((char *) event.data.marker.name);
 						/* if reached a spd mark and pausing requested, stop */
 						if (baratinoo_pause_requested &&
 						    g_str_has_prefix(event.data.marker.name, "__spd_")) {
-							DBG(DBG_MODNAME " Pausing in thread");
+							DBG(DBG_MODNAME "Pausing in thread");
 							state = BCpurge(baratinoo_engine);
 							baratinoo_pause_requested = FALSE;
 							module_report_event_pause();
@@ -749,13 +769,13 @@ void *_baratinoo_speak(void *nothing)
 				}
 			}
 		} while (state == BARATINOO_RUNNING || state == BARATINOO_EVENT);
-		DBG("leaving TTS loop state=%d", state);
+		DBG(DBG_MODNAME "leaving TTS loop with state=%d", state);
 
 		BCinputTextBufferDelete(baratinoo_text_buffer);
 		baratinoo_text_buffer = NULL;
 	}
 
-	DBG("leaving thread with state=%d", state);
+	DBG(DBG_MODNAME "leaving thread with state=%d", state);
 
 	return NULL;
 }
