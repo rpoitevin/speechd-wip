@@ -203,12 +203,49 @@ static int baratinoo_output_signal_cb(void *privateData, const void *address, in
 	return 0;
 }
 
+static SPDVoice **baratinoo_list_voices(BCengine *engine)
+{
+	SPDVoice **voices;
+	int n_voices;
+	int i;
+
+	n_voices = BCgetNumberOfVoices(engine);
+	if (n_voices < 1)
+		return NULL;
+
+	voices = g_malloc_n(n_voices + 1, sizeof *voices);
+	DBG(DBG_MODNAME "Got %d available voices:", n_voices);
+	for (i = 0; i < n_voices; i++) {
+		SPDVoice *voice;
+		const char *dash;
+		BaratinooVoiceInfo voice_info = BCgetVoiceInfo(engine, i);
+
+		DBG(DBG_MODNAME "\tVoice #%d: name=%s, language=%s, gender=%s",
+		    i, voice_info.name, voice_info.language, voice_info.gender);
+
+		voice = g_malloc0(sizeof *voice);
+		voice->name = g_strdup(voice_info.name);
+
+		dash = strchr(voice_info.language, '-');
+		if (dash) {
+			voice->language = g_strndup(voice_info.language,
+						    dash - voice_info.language);
+			voice->variant = g_ascii_strdown(dash + 1, -1);
+		} else {
+			voice->language = g_strdup(voice_info.language);
+		}
+
+		voices[i] = voice;
+	}
+	voices[i] = NULL;
+
+	return voices;
+}
+
 int module_init(char **status_info)
 {
 	int ret;
 	BARATINOOC_STATE state;
-	int n_voices;
-	int i;
 
 	DBG(DBG_MODNAME "Module init");
 	INIT_INDEX_MARKING();
@@ -251,8 +288,8 @@ int module_init(char **status_info)
 	}
 
 	/* Find voices */
-	n_voices = BCgetNumberOfVoices(baratinoo_engine);
-	if (n_voices < 1) {
+	baratinoo_voice_list = baratinoo_list_voices(baratinoo_engine);
+	if (!baratinoo_voice_list) {
 		DBG(DBG_MODNAME "No voice available");
 		*status_info = g_strdup("No voice found. Make sure your setup "
 					"includes at least one voice.");
@@ -261,31 +298,6 @@ int module_init(char **status_info)
 		BCterminatelib();
 		return -1;
 	}
-	baratinoo_voice_list = g_malloc_n(n_voices + 1, sizeof *baratinoo_voice_list);
-	DBG(DBG_MODNAME "Got %d available voices:", n_voices);
-	for (i = 0; i < n_voices; i++) {
-		SPDVoice *voice;
-		const char *dash;
-		BaratinooVoiceInfo voice_info = BCgetVoiceInfo(baratinoo_engine, i);
-
-		DBG(DBG_MODNAME "\tVoice #%d: name=%s, language=%s, gender=%s",
-		    i, voice_info.name, voice_info.language, voice_info.gender);
-
-		voice = g_malloc0(sizeof *voice);
-		voice->name = g_strdup(voice_info.name);
-
-		dash = strchr(voice_info.language, '-');
-		if (dash) {
-			voice->language = g_strndup(voice_info.language,
-						    dash - voice_info.language);
-			voice->variant = g_ascii_strdown(dash + 1, -1);
-		} else {
-			voice->language = g_strdup(voice_info.language);
-		}
-
-		baratinoo_voice_list[i] = voice;
-	}
-	baratinoo_voice_list[i] = NULL;
 
 	BCsetOutputSignal(baratinoo_engine, baratinoo_output_signal_cb,
 			  NULL, BARATINOO_PCM, 16000 /* default frequency */);
