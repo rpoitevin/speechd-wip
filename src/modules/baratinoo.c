@@ -93,6 +93,7 @@ static int baratinoo_voice = 0;
 static void *_baratinoo_speak(void *);
 
 MOD_OPTION_1_STR(BaratinooConfigPath);
+MOD_OPTION_1_INT(BaratinooSampleRate);
 
 /* Public functions */
 
@@ -116,6 +117,9 @@ int module_load(void)
 	}
 	MOD_OPTION_1_STR_REG(BaratinooConfigPath, default_config);
 	g_free(default_config);
+
+	/* Sample rate. 16000Hz is the voices default, not requiring resampling */
+	MOD_OPTION_1_INT_REG(BaratinooSampleRate, 16000);
 
 	return 0;
 }
@@ -196,7 +200,7 @@ static int baratinoo_output_signal_cb(void *privateData, const void *address, in
 
 	track.num_samples = length / 2; /* 16 bits per sample = 2 bytes */
 	track.num_channels = 1;
-	track.sample_rate = 16000;
+	track.sample_rate = BaratinooSampleRate;
 	track.bits = 16;
 	track.samples = (short *) address;
 
@@ -305,7 +309,7 @@ int module_init(char **status_info)
 
 	/* Setup output (audio) signal handling */
 	BCsetOutputSignal(baratinoo_engine, baratinoo_output_signal_cb,
-			  NULL, BARATINOO_PCM, 16000 /* default frequency */);
+			  NULL, BARATINOO_PCM, BaratinooSampleRate);
 
 	BCsetWantedEvent(baratinoo_engine, BARATINOO_MARKER_EVENT);
 
