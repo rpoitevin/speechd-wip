@@ -208,8 +208,19 @@ int module_init(char **status_info)
 	}
 
 	/* Setup output (audio) signal handling */
+	DBG(DBG_MODNAME "Using PCM output at %dHz", BaratinooSampleRate);
 	BCsetOutputSignal(engine->engine, baratinoo_output_signal_cb,
 			  engine, BARATINOO_PCM, BaratinooSampleRate);
+	if (BCgetState(engine->engine) != BARATINOO_INITIALIZED) {
+		DBG(DBG_MODNAME "Failed to initialize output signal handler");
+		*status_info = g_strdup("Failed to initialize Baratinoo output "
+					"signal handler. Is the configured "
+					"sample rate correct?");
+
+		BCdelete(engine->engine);
+		BCterminatelib();
+		return -1;
+	}
 
 	BCsetWantedEvent(engine->engine, BARATINOO_MARKER_EVENT);
 
