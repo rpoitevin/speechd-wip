@@ -312,8 +312,10 @@ int module_speak(gchar *data, size_t bytes, SPDMessageType msgtype)
 err:
 	if (buffer)
 		g_string_free(buffer, TRUE);
-	if (baratinoo_text_buffer)
+	if (baratinoo_text_buffer) {
 		BCinputTextBufferDelete(baratinoo_text_buffer);
+		baratinoo_text_buffer = NULL;
+	}
 
 	return 0;
 }
