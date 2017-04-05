@@ -190,6 +190,11 @@ void baratinoo_trace_cb(BaratinooTraceLevel level, int engine_num, const char *s
 static int baratinoo_output_signal_cb(void *privateData, const void *address, int length)
 {
 	AudioTrack track;
+#if defined(BYTE_ORDER) && (BYTE_ORDER == BIG_ENDIAN)
+	AudioFormat format = SPD_AUDIO_BE;
+#else
+	AudioFormat format = SPD_AUDIO_LE;
+#endif
 
 	/* If stop is requested during synthesis, abort here to stop speech as
 	 * early as possible, even if the engine didn't finish its cycle yet. */
@@ -205,7 +210,7 @@ static int baratinoo_output_signal_cb(void *privateData, const void *address, in
 	track.samples = (short *) address;
 
 	DBG(DBG_MODNAME "Playing part of the message");
-	if (module_tts_output(track, SPD_AUDIO_LE) < 0)
+	if (module_tts_output(track, format) < 0)
 		DBG(DBG_MODNAME "ERROR: failed to play the track");
 
 	return 0;
