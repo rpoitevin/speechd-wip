@@ -506,7 +506,7 @@ static void *_baratinoo_speak(void *data)
 				engine->stop_requested = FALSE;
 				module_report_event_stop();
 			} else {
-				state = BCprocessLoop(engine->engine, 100);
+				state = BCprocessLoop(engine->engine, -1);
 				if (state == BARATINOO_INITIALIZED)
 					module_report_event_end();
 				else if (state == BARATINOO_EVENT) {
@@ -798,7 +798,7 @@ static void baratinoo_trace_cb(BaratinooTraceLevel level, int engine_num, const 
  * @param private_data An Engine structure.
  * @param address Audio samples.
  * @param length Length of @p address, in bytes.
- * @returns 0.
+ * @returns Whether to break out of the process loop.
  *
  * Called by the engine during speech synthesis.
  *
@@ -818,7 +818,7 @@ static int baratinoo_output_signal_cb(void *private_data, const void *address, i
 	 * early as possible, even if the engine didn't finish its cycle yet. */
 	if (engine->stop_requested) {
 		DBG(DBG_MODNAME "Not playing message because it got stopped");
-		return 0;
+		return engine->stop_requested;
 	}
 
 	/* We receive 16 bits PCM data */
@@ -832,7 +832,7 @@ static int baratinoo_output_signal_cb(void *private_data, const void *address, i
 	if (module_tts_output(track, format) < 0)
 		DBG(DBG_MODNAME "ERROR: failed to play the track");
 
-	return 0;
+	return engine->stop_requested;
 }
 
 /* SSML conversion functions */
