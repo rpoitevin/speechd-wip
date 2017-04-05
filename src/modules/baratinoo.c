@@ -119,6 +119,9 @@ static void append_ssml_as_proprietary(GString *buf, const char *data, gsize siz
 /* Module configuration options */
 MOD_OPTION_1_STR(BaratinooConfigPath);
 MOD_OPTION_1_INT(BaratinooSampleRate);
+MOD_OPTION_1_INT(BaratinooMinRate);
+MOD_OPTION_1_INT(BaratinooNormalRate);
+MOD_OPTION_1_INT(BaratinooMaxRate);
 
 /* Public functions */
 
@@ -145,6 +148,11 @@ int module_load(void)
 
 	/* Sample rate. 16000Hz is the voices default, not requiring resampling */
 	MOD_OPTION_1_INT_REG(BaratinooSampleRate, 16000);
+
+	/* Speech rate */
+	MOD_OPTION_1_INT_REG(BaratinooMinRate, -100);
+	MOD_OPTION_1_INT_REG(BaratinooNormalRate, 0);
+	MOD_OPTION_1_INT_REG(BaratinooMaxRate, 100);
 
 	return 0;
 }
@@ -245,6 +253,7 @@ int module_speak(gchar *data, size_t bytes, SPDMessageType msgtype)
 {
 	Engine *engine = &baratinoo_engine;
 	GString *buffer = NULL;
+	int rate;
 
 	DBG(DBG_MODNAME "Speech requested");
 
@@ -281,9 +290,13 @@ int module_speak(gchar *data, size_t bytes, SPDMessageType msgtype)
 	buffer = g_string_new(NULL);
 
 	/* Apply speech parameters */
-	if (msg_settings.rate != 0) {
-		g_string_append_printf(buffer, "\\rate{%+d%%}",
-				       msg_settings.rate);
+	if (msg_settings.rate < 0)
+		rate = BaratinooNormalRate + (BaratinooNormalRate - BaratinooMinRate) * msg_settings.rate / 100;
+	else
+		rate = BaratinooNormalRate + (BaratinooMaxRate - BaratinooNormalRate) * msg_settings.rate / 100;
+
+	if (rate != 0) {
+		g_string_append_printf(buffer, "\\rate{%+d%%}", rate);
 	}
 	if (msg_settings.pitch != 0 || msg_settings.pitch_range != 0) {
 		g_string_append_printf(buffer, "\\pitch{%+d%% %+d%%}",
