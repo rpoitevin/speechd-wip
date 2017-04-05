@@ -733,6 +733,11 @@ int module_stop(void)
 {
 	DBG(DBG_MODNAME "Stop requested");
 	baratinoo_stop_requested = TRUE;
+	if (module_audio_id) {
+		DBG(DBG_MODNAME "Stopping audio currently playing.");
+		if (spd_audio_stop(module_audio_id) != 0)
+			DBG(DBG_MODNAME "spd_audio_stop() returned non-zero value.");
+	}
 
 	return 0;
 }
