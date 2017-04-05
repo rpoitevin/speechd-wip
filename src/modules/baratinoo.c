@@ -311,6 +311,7 @@ int module_init(char **status_info)
 	if (ret != 0) {
 		BCdelete(baratinoo_engine);
 		BCterminatelib();
+		sem_destroy(&baratinoo_semaphore);
 
 		DBG(DBG_MODNAME "thread creation failed");
 		*status_info =
