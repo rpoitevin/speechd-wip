@@ -178,8 +178,6 @@ int module_init(char **status_info)
 	if (!engine->engine) {
 		DBG(DBG_MODNAME "Failed to allocate engine");
 		*status_info = g_strdup("Failed to create Baratinoo engine.");
-
-		BCterminatelib();
 		return -1;
 	}
 
@@ -189,9 +187,6 @@ int module_init(char **status_info)
 		DBG(DBG_MODNAME "Failed to initialize engine");
 		*status_info = g_strdup("Failed to initialize Baratinoo engine. "
 					"Make sure your setup is OK.");
-
-		BCdelete(engine->engine);
-		BCterminatelib();
 		return -1;
 	}
 
@@ -201,9 +196,6 @@ int module_init(char **status_info)
 		DBG(DBG_MODNAME "No voice available");
 		*status_info = g_strdup("No voice found. Make sure your setup "
 					"includes at least one voice.");
-
-		BCdelete(engine->engine);
-		BCterminatelib();
 		return -1;
 	}
 
@@ -216,9 +208,6 @@ int module_init(char **status_info)
 		*status_info = g_strdup("Failed to initialize Baratinoo output "
 					"signal handler. Is the configured "
 					"sample rate correct?");
-
-		BCdelete(engine->engine);
-		BCterminatelib();
 		return -1;
 	}
 
@@ -236,10 +225,6 @@ int module_init(char **status_info)
 			     "This could be either an internal problem or an "
 			     "architecture problem. If you are sure your architecture "
 			     "supports threads, please report a bug.");
-
-		BCdelete(engine->engine);
-		BCterminatelib();
-		sem_destroy(&engine->semaphore);
 		return -1;
 	}
 
