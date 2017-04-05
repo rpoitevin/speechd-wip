@@ -769,6 +769,8 @@ int module_close(void)
 	if (pthread_join(baratinoo_speak_thread, NULL) != 0)
 		DBG(DBG_MODNAME "Failed to join threads.");
 
+	sem_destroy(&baratinoo_semaphore);
+
 	/* destroy voice list */
 	if (baratinoo_voice_list != NULL) {
 		int i;
@@ -790,8 +792,6 @@ int module_close(void)
 
 	/* uninitialize */
 	BCterminatelib();
-
-	sem_destroy(&baratinoo_semaphore);
 
 	DBG(DBG_MODNAME "Module closed.");
 
