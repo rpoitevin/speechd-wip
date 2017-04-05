@@ -203,6 +203,7 @@ static int baratinoo_output_signal_cb(void *privateData, const void *address, in
 		return 0;
 	}
 
+	/* We receive 16 bits PCM data */
 	track.num_samples = length / 2; /* 16 bits per sample = 2 bytes */
 	track.num_channels = 1;
 	track.sample_rate = BaratinooSampleRate;
@@ -216,6 +217,11 @@ static int baratinoo_output_signal_cb(void *privateData, const void *address, in
 	return 0;
 }
 
+/**
+ * @brief Lists voices in SPD format
+ * @param engine An engine.
+ * @returns A NULL-terminated list of @c SPDVoice, or NULL if no voice found.
+ */
 static SPDVoice **baratinoo_list_voices(BCengine *engine)
 {
 	SPDVoice **voices;
@@ -509,17 +515,20 @@ static void baratinoo_set_language_and_voice(char *lang, SPDVoiceType voice_code
 	}
 }
 
-static void baratinoo_set_voice(SPDVoiceType voice)
+/* UPDATE_PARAMETER callback to set the voice type */
+static void baratinoo_set_voice_type(SPDVoiceType voice)
 {
 	assert(msg_settings.voice.language);
 	baratinoo_set_language_and_voice(msg_settings.voice.language, voice);
 }
 
+/* UPDATE_PARAMETER callback to set the voice language */
 static void baratinoo_set_language(char *lang)
 {
 	baratinoo_set_language_and_voice(lang, msg_settings.voice_type);
 }
 
+/* UPDATE_PARAMETER callback to set the voice by name */
 static void baratinoo_set_synthesis_voice(char *synthesis_voice)
 {
 	int i;
@@ -665,7 +674,7 @@ int module_speak(gchar *data, size_t bytes, SPDMessageType msgtype)
 	 *       we didn't know that the thread is sleeping.  But we do know it
 	 *       is, as @c baratinoo_text_buffer is NULL */
 	UPDATE_STRING_PARAMETER(voice.language, baratinoo_set_language);
-	UPDATE_PARAMETER(voice_type, baratinoo_set_voice);
+	UPDATE_PARAMETER(voice_type, baratinoo_set_voice_type);
 	UPDATE_STRING_PARAMETER(voice.name, baratinoo_set_synthesis_voice);
 
 	baratinoo_text_buffer = BCinputTextBufferNew(BARATINOO_PROPRIETARY_PARSING,
