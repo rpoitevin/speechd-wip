@@ -91,7 +91,18 @@ static int baratinoo_voice = 0;
 
 /* Internal functions prototypes */
 static void *_baratinoo_speak(void *);
+static SPDVoice **baratinoo_list_voices(BCengine *engine);
+/* Parameters */
+static void baratinoo_set_voice_type(SPDVoiceType voice);
+static void baratinoo_set_language(char *lang);
+static void baratinoo_set_synthesis_voice(char *synthesis_voice);
+/* Engine callbacks */
+static void baratinoo_trace_cb(BaratinooTraceLevel level, int engine_num, const char *source, const void *data, const char *format, va_list args);
+static int baratinoo_output_signal_cb(void *privateData, const void *address, int length);
+/* SSML conversion functions */
+static void append_ssml_as_proprietary(GString *buf, const char *data, gsize size);
 
+/* Module configuration options */
 MOD_OPTION_1_STR(BaratinooConfigPath);
 MOD_OPTION_1_INT(BaratinooSampleRate);
 
@@ -122,143 +133,6 @@ int module_load(void)
 	MOD_OPTION_1_INT_REG(BaratinooSampleRate, 16000);
 
 	return 0;
-}
-
-/**
- * @brief Logs a message from Baratinoo
- * @param level Message importance.
- * @param engine_num ID of the engine that emitted the message, or 0 if it is a
- *                   library message.
- * @param source Message category.
- * @param data Private data, unused.
- * @param format printf-like @p format.
- * @param args arguments for @p format.
- */
-void baratinoo_trace_cb(BaratinooTraceLevel level, int engine_num, const char *source, const void *data, const char *format, va_list args)
-{
-	const char *prefix = "";
-
-	if (!Debug) {
-		switch (level) {
-		case BARATINOO_TRACE_INIT:
-		case BARATINOO_TRACE_INFO:
-		case BARATINOO_TRACE_DEBUG:
-			return;
-		default:
-			break;
-		}
-	}
-
-	switch (level) {
-	case BARATINOO_TRACE_ERROR:
-		prefix = "ERROR";
-		break;
-	case BARATINOO_TRACE_INIT:
-		prefix = "INIT";
-		break;
-	case BARATINOO_TRACE_WARNING:
-		prefix = "WARNING";
-		break;
-	case BARATINOO_TRACE_INFO:
-		prefix = "INFO";
-		break;
-	case BARATINOO_TRACE_DEBUG:
-		prefix = "DEBUG";
-		break;
-	}
-
-	if (engine_num == 0)
-		fprintf(stderr, "Baratinoo library: ");
-	else
-		fprintf(stderr, "Baratinoo engine #%d: ", engine_num);
-	fprintf(stderr, "%s: %s ", prefix, source);
-	vfprintf(stderr, format, args);
-	fprintf(stderr, "\n");
-}
-
-/**
- * @brief Output (sound) callback
- * @param privateData Unused.
- * @param address Audio samples.
- * @param length Length of @p address, in bytes.
- * @returns 0.
- *
- * Called by the engine during speech synthesis.
- *
- * @see BCprocessLoop()
- */
-static int baratinoo_output_signal_cb(void *privateData, const void *address, int length)
-{
-	AudioTrack track;
-#if defined(BYTE_ORDER) && (BYTE_ORDER == BIG_ENDIAN)
-	AudioFormat format = SPD_AUDIO_BE;
-#else
-	AudioFormat format = SPD_AUDIO_LE;
-#endif
-
-	/* If stop is requested during synthesis, abort here to stop speech as
-	 * early as possible, even if the engine didn't finish its cycle yet. */
-	if (baratinoo_stop_requested) {
-		DBG(DBG_MODNAME "Not playing message because it got stopped");
-		return 0;
-	}
-
-	/* We receive 16 bits PCM data */
-	track.num_samples = length / 2; /* 16 bits per sample = 2 bytes */
-	track.num_channels = 1;
-	track.sample_rate = BaratinooSampleRate;
-	track.bits = 16;
-	track.samples = (short *) address;
-
-	DBG(DBG_MODNAME "Playing part of the message");
-	if (module_tts_output(track, format) < 0)
-		DBG(DBG_MODNAME "ERROR: failed to play the track");
-
-	return 0;
-}
-
-/**
- * @brief Lists voices in SPD format
- * @param engine An engine.
- * @returns A NULL-terminated list of @c SPDVoice, or NULL if no voice found.
- */
-static SPDVoice **baratinoo_list_voices(BCengine *engine)
-{
-	SPDVoice **voices;
-	int n_voices;
-	int i;
-
-	n_voices = BCgetNumberOfVoices(engine);
-	if (n_voices < 1)
-		return NULL;
-
-	voices = g_malloc_n(n_voices + 1, sizeof *voices);
-	DBG(DBG_MODNAME "Got %d available voices:", n_voices);
-	for (i = 0; i < n_voices; i++) {
-		SPDVoice *voice;
-		const char *dash;
-		BaratinooVoiceInfo voice_info = BCgetVoiceInfo(engine, i);
-
-		DBG(DBG_MODNAME "\tVoice #%d: name=%s, language=%s, gender=%s",
-		    i, voice_info.name, voice_info.language, voice_info.gender);
-
-		voice = g_malloc0(sizeof *voice);
-		voice->name = g_strdup(voice_info.name);
-
-		dash = strchr(voice_info.language, '-');
-		if (dash) {
-			voice->language = g_strndup(voice_info.language,
-						    dash - voice_info.language);
-			voice->variant = g_ascii_strdown(dash + 1, -1);
-		} else {
-			voice->language = g_strdup(voice_info.language);
-		}
-
-		voices[i] = voice;
-	}
-	voices[i] = NULL;
-
-	return voices;
 }
 
 int module_init(char **status_info)
@@ -354,300 +228,6 @@ SPDVoice **module_list_voices(void)
 	return baratinoo_voice_list;
 }
 
-/**
- * @brief Matches a Baratinoo voice info against a SPD language
- * @param info A voice info to match.
- * @param lang A SPD language to match against.
- * @returns The quality of the match: the higher the better.
- *
- * Gives a score to a voice based on its compatibility with @p lang.
- */
-static int lang_match_level(const BaratinooVoiceInfo *info, const char *lang)
-{
-	int level = 0;
-
-	if (g_ascii_strcasecmp(lang, info->language) == 0)
-		level += 10;
-	else {
-		gchar **a = g_strsplit_set(info->language, "-", 2);
-		gchar **b = g_strsplit_set(lang, "-", 2);
-
-		/* language */
-		if (g_ascii_strcasecmp(a[0], b[0]) == 0)
-			level += 8;
-		else if (g_ascii_strcasecmp(info->iso639, b[0]) == 0)
-			level += 8;
-		else if (g_ascii_strncasecmp(a[0], b[0], 2) == 0)
-			level += 5; /* partial match */
-		/* region */
-		if (a[1] && b[1] && g_ascii_strcasecmp(a[1], b[1]) == 0)
-			level += 2;
-		else if (b[1] && g_ascii_strcasecmp(info->iso3166, b[1]) == 0)
-			level += 2;
-		else if (a[1] && b[1] && g_ascii_strncasecmp(a[1], b[1], 2) == 0)
-			level += 1; /* partial match */
-
-		g_strfreev(a);
-		g_strfreev(b);
-	}
-
-	DBG(DBG_MODNAME "lang_match_level({language=%s, iso639=%s, iso3166=%s}, lang=%s) = %d",
-	    info->language, info->iso639, info->iso3166, lang, level);
-
-	return level;
-}
-
-/**
- * @brief Sort two Baratinoo voices by SPD criteria.
- * @param a A voice info.
- * @param b Another voice info.
- * @param lang A SPD language.
- * @param voice_code A SPD voice code.
- * @returns < 0 if @p a is best, > 0 if @p b is best, and 0 if they are equally
- *          matching.  Larger divergence from 0 means better match.
- */
-static int sort_voice(const BaratinooVoiceInfo *a, const BaratinooVoiceInfo *b, const char *lang, SPDVoiceType voice_code)
-{
-	int cmp = 0;
-
-	cmp -= lang_match_level(a, lang);
-	cmp += lang_match_level(b, lang);
-
-	if (strcmp(a->gender, b->gender) != 0) {
-		const char *gender;
-
-		switch (voice_code) {
-		default:
-		case SPD_MALE1:
-		case SPD_MALE2:
-		case SPD_MALE3:
-		case SPD_CHILD_MALE:
-			gender = "male";
-			break;
-
-		case SPD_FEMALE1:
-		case SPD_FEMALE2:
-		case SPD_FEMALE3:
-		case SPD_CHILD_FEMALE:
-			gender = "female";
-			break;
-		}
-
-		if (strcmp(gender, a->gender) == 0)
-			cmp--;
-		if (strcmp(gender, b->gender) == 0)
-			cmp++;
-	}
-
-	switch (voice_code) {
-	case SPD_CHILD_MALE:
-	case SPD_CHILD_FEMALE:
-		if (a->age && a->age <= 15)
-			cmp--;
-		if (b->age && b->age <= 15)
-			cmp++;
-		break;
-	default:
-		/* we expect mostly adult voices, so only compare if age is set */
-		if (a->age && b->age) {
-			if (a->age > 15)
-				cmp--;
-			if (b->age > 15)
-				cmp++;
-		}
-		break;
-	}
-
-	DBG(DBG_MODNAME "Comparing %s <> %s gives %d", a->name, b->name, cmp);
-
-	return cmp;
-}
-
-/* Given a language code and SD voice code, sets the voice. */
-static void baratinoo_set_language_and_voice(char *lang, SPDVoiceType voice_code)
-{
-	int i;
-	int best_match = -1;
-	int nth_match = 0;
-	int offset = 0; // nth voice we'd like
-	BaratinooVoiceInfo best_info;
-
-	DBG(DBG_MODNAME "set_language_and_voice(lang=%s, voice_code=%d)",
-	    lang, voice_code);
-
-	switch (voice_code) {
-	case SPD_MALE3:
-	case SPD_FEMALE3:
-		offset++;
-	case SPD_MALE2:
-	case SPD_FEMALE2:
-		offset++;
-	default:
-		break;
-	}
-
-	for (i = 0; i < BCgetNumberOfVoices(baratinoo_engine); i++) {
-		if (i == 0) {
-			best_match = i;
-			best_info = BCgetVoiceInfo(baratinoo_engine, i);
-			nth_match++;
-		} else {
-			BaratinooVoiceInfo info = BCgetVoiceInfo(baratinoo_engine, i);
-			int cmp = sort_voice(&best_info, &info, lang, voice_code);
-
-			if (cmp >= 0) {
-				if (cmp > 0)
-					nth_match = 0;
-				if (nth_match <= offset) {
-					best_match = i;
-					best_info = info;
-				}
-				nth_match++;
-			}
-		}
-	}
-
-	if (best_match < 0) {
-		DBG(DBG_MODNAME "No voice match found, not changing voice.");
-	} else {
-		DBG(DBG_MODNAME "Best voice match is %d.", best_match);
-		baratinoo_voice = best_match;
-	}
-}
-
-/* UPDATE_PARAMETER callback to set the voice type */
-static void baratinoo_set_voice_type(SPDVoiceType voice)
-{
-	assert(msg_settings.voice.language);
-	baratinoo_set_language_and_voice(msg_settings.voice.language, voice);
-}
-
-/* UPDATE_PARAMETER callback to set the voice language */
-static void baratinoo_set_language(char *lang)
-{
-	baratinoo_set_language_and_voice(lang, msg_settings.voice_type);
-}
-
-/* UPDATE_PARAMETER callback to set the voice by name */
-static void baratinoo_set_synthesis_voice(char *synthesis_voice)
-{
-	int i;
-
-	if (synthesis_voice == NULL)
-		return;
-
-	for (i = 0; i < BCgetNumberOfVoices(baratinoo_engine); i++) {
-		BaratinooVoiceInfo info = BCgetVoiceInfo(baratinoo_engine, i);
-
-		if (strcmp(synthesis_voice, info.name) == 0) {
-			baratinoo_voice = i;
-			return;
-		}
-	}
-
-	DBG(DBG_MODNAME "Failed to set synthesis voice to '%s': not found.",
-	    synthesis_voice);
-}
-
-/* locates a string in a NULL-terminated array of strings
- * Returns -1 if not found, the index otherwise. */
-static int attribute_index(const char **names, const char *name)
-{
-	int i;
-
-	for (i = 0; names && names[i] != NULL; i++) {
-		if (strcmp(names[i], name) == 0)
-			return i;
-	}
-
-	return -1;
-}
-
-/* Markup element start callback */
-static void ssml2baratinoo_start_element(GMarkupParseContext *ctx,
-					 const gchar *element,
-					 const gchar **attribute_names,
-					 const gchar **attribute_values,
-					 gpointer buffer, GError **error)
-{
-	if (strcmp(element, "mark") == 0) {
-		int i = attribute_index(attribute_names, "name");
-		g_string_append_printf(buffer, "\\mark{%s}",
-				       i < 0 ? "" : attribute_values[i]);
-	} else if (strcmp(element, "emphasis") == 0) {
-		int i = attribute_index(attribute_names, "level");
-		g_string_append_printf(buffer, "\\emph<{%s}",
-				       i < 0 ? "" : attribute_values[i]);
-	} else {
-		/* ignore other elements */
-		/* TODO: handle more elements */
-	}
-}
-
-/* Markup element end callback */
-static void ssml2baratinoo_end_element(GMarkupParseContext *ctx,
-				       const gchar *element,
-				       gpointer buffer, GError **error)
-{
-	if (strcmp(element, "emphasis") == 0) {
-		g_string_append(buffer, "\\emph>{}");
-	}
-}
-
-/* Markup text node callback */
-static void ssml2baratinoo_text(GMarkupParseContext *ctx,
-				const gchar *text, gsize len,
-				gpointer buffer, GError **error)
-{
-	gsize i;
-
-	for (i = 0; i < len; i++) {
-		if (text[i] == '\\') {
-			/* escape the \ by appending a comment so it won't be
-			 * interpreted as a command */
-			g_string_append(buffer, "\\\\{}");
-		} else {
-			g_string_append_c(buffer, text[i]);
-		}
-	}
-}
-
-/**
- * @brief Converts SSML data to Baratinoo's proprietary format.
- * @param buf A buffer to write to.
- * @param data SSML data to convert.
- * @param size Length of @p data
- *
- * @warning Only a subset of the input SSML is currently translated, the rest
- *          being discarded.
- */
-static void append_ssml_as_proprietary(GString *buf, const char *data, gsize size)
-{
-	/* FIXME: we could possibly use SSML mode, but the Baratinoo parser is
-	 * very strict and *requires* "xmlns", "version" and "lang" attributes
-	 * on the <speak> tag, which speech-dispatcher doesn't provide.
-	 *
-	 * Moreover, we need to add tags for volume/rate/pitch so we'd have to
-	 * amend the data anyway. */
-	static const GMarkupParser parser = {
-		.start_element = ssml2baratinoo_start_element,
-		.end_element = ssml2baratinoo_end_element,
-		.text = ssml2baratinoo_text,
-	};
-	GMarkupParseContext *ctx;
-	GError *err = NULL;
-
-	ctx = g_markup_parse_context_new(&parser, G_MARKUP_TREAT_CDATA_AS_TEXT,
-					 buf, NULL);
-	if (!g_markup_parse_context_parse(ctx, data, size, &err) ||
-	    !g_markup_parse_context_end_parse(ctx, &err)) {
-		DBG(DBG_MODNAME "Failed to convert SSML: %s", err->message);
-		g_error_free(err);
-	}
-
-	g_markup_parse_context_free(ctx);
-}
-
 int module_speak(gchar *data, size_t bytes, SPDMessageType msgtype)
 {
 	GString *buffer = NULL;
@@ -680,7 +260,7 @@ int module_speak(gchar *data, size_t bytes, SPDMessageType msgtype)
 	baratinoo_text_buffer = BCinputTextBufferNew(BARATINOO_PROPRIETARY_PARSING,
 						     BARATINOO_UTF8,
 						     baratinoo_voice, 0);
-	if (! baratinoo_text_buffer) {
+	if (!baratinoo_text_buffer) {
 		DBG(DBG_MODNAME "Failed to allocate input buffer");
 		goto err;
 	}
@@ -810,6 +390,50 @@ int module_close(void)
 /* Internal functions */
 
 /**
+ * @brief Lists voices in SPD format
+ * @param engine An engine.
+ * @returns A NULL-terminated list of @c SPDVoice, or NULL if no voice found.
+ */
+static SPDVoice **baratinoo_list_voices(BCengine *engine)
+{
+	SPDVoice **voices;
+	int n_voices;
+	int i;
+
+	n_voices = BCgetNumberOfVoices(engine);
+	if (n_voices < 1)
+		return NULL;
+
+	voices = g_malloc_n(n_voices + 1, sizeof *voices);
+	DBG(DBG_MODNAME "Got %d available voices:", n_voices);
+	for (i = 0; i < n_voices; i++) {
+		SPDVoice *voice;
+		const char *dash;
+		BaratinooVoiceInfo voice_info = BCgetVoiceInfo(engine, i);
+
+		DBG(DBG_MODNAME "\tVoice #%d: name=%s, language=%s, gender=%s",
+		    i, voice_info.name, voice_info.language, voice_info.gender);
+
+		voice = g_malloc0(sizeof *voice);
+		voice->name = g_strdup(voice_info.name);
+
+		dash = strchr(voice_info.language, '-');
+		if (dash) {
+			voice->language = g_strndup(voice_info.language,
+						    dash - voice_info.language);
+			voice->variant = g_ascii_strdown(dash + 1, -1);
+		} else {
+			voice->language = g_strdup(voice_info.language);
+		}
+
+		voices[i] = voice;
+	}
+	voices[i] = NULL;
+
+	return voices;
+}
+
+/**
  * @brief Internal TTS thread.
  * @param nothing Ignore.
  * @returns NULL.
@@ -821,7 +445,7 @@ int module_close(void)
  * @see baratinoo_stop_requested
  * @see baratinoo_close_requested
  */
-void *_baratinoo_speak(void *nothing)
+static void *_baratinoo_speak(void *nothing)
 {
 	BARATINOOC_STATE state;
 
@@ -877,4 +501,397 @@ void *_baratinoo_speak(void *nothing)
 	DBG(DBG_MODNAME "leaving thread with state=%d", state);
 
 	return NULL;
+}
+
+/* Voice selection */
+
+/**
+ * @brief Matches a Baratinoo voice info against a SPD language
+ * @param info A voice info to match.
+ * @param lang A SPD language to match against.
+ * @returns The quality of the match: the higher the better.
+ *
+ * Gives a score to a voice based on its compatibility with @p lang.
+ */
+static int lang_match_level(const BaratinooVoiceInfo *info, const char *lang)
+{
+	int level = 0;
+
+	if (g_ascii_strcasecmp(lang, info->language) == 0)
+		level += 10;
+	else {
+		gchar **a = g_strsplit_set(info->language, "-", 2);
+		gchar **b = g_strsplit_set(lang, "-", 2);
+
+		/* language */
+		if (g_ascii_strcasecmp(a[0], b[0]) == 0)
+			level += 8;
+		else if (g_ascii_strcasecmp(info->iso639, b[0]) == 0)
+			level += 8;
+		else if (g_ascii_strncasecmp(a[0], b[0], 2) == 0)
+			level += 5; /* partial match */
+		/* region */
+		if (a[1] && b[1] && g_ascii_strcasecmp(a[1], b[1]) == 0)
+			level += 2;
+		else if (b[1] && g_ascii_strcasecmp(info->iso3166, b[1]) == 0)
+			level += 2;
+		else if (a[1] && b[1] && g_ascii_strncasecmp(a[1], b[1], 2) == 0)
+			level += 1; /* partial match */
+
+		g_strfreev(a);
+		g_strfreev(b);
+	}
+
+	DBG(DBG_MODNAME "lang_match_level({language=%s, iso639=%s, iso3166=%s}, lang=%s) = %d",
+	    info->language, info->iso639, info->iso3166, lang, level);
+
+	return level;
+}
+
+/**
+ * @brief Sort two Baratinoo voices by SPD criteria.
+ * @param a A voice info.
+ * @param b Another voice info.
+ * @param lang A SPD language.
+ * @param voice_code A SPD voice code.
+ * @returns < 0 if @p a is best, > 0 if @p b is best, and 0 if they are equally
+ *          matching.  Larger divergence from 0 means better match.
+ */
+static int sort_voice(const BaratinooVoiceInfo *a, const BaratinooVoiceInfo *b, const char *lang, SPDVoiceType voice_code)
+{
+	int cmp = 0;
+
+	cmp -= lang_match_level(a, lang);
+	cmp += lang_match_level(b, lang);
+
+	if (strcmp(a->gender, b->gender) != 0) {
+		const char *gender;
+
+		switch (voice_code) {
+		default:
+		case SPD_MALE1:
+		case SPD_MALE2:
+		case SPD_MALE3:
+		case SPD_CHILD_MALE:
+			gender = "male";
+			break;
+
+		case SPD_FEMALE1:
+		case SPD_FEMALE2:
+		case SPD_FEMALE3:
+		case SPD_CHILD_FEMALE:
+			gender = "female";
+			break;
+		}
+
+		if (strcmp(gender, a->gender) == 0)
+			cmp--;
+		if (strcmp(gender, b->gender) == 0)
+			cmp++;
+	}
+
+	switch (voice_code) {
+	case SPD_CHILD_MALE:
+	case SPD_CHILD_FEMALE:
+		if (a->age && a->age <= 15)
+			cmp--;
+		if (b->age && b->age <= 15)
+			cmp++;
+		break;
+	default:
+		/* we expect mostly adult voices, so only compare if age is set */
+		if (a->age && b->age) {
+			if (a->age > 15)
+				cmp--;
+			if (b->age > 15)
+				cmp++;
+		}
+		break;
+	}
+
+	DBG(DBG_MODNAME "Comparing %s <> %s gives %d", a->name, b->name, cmp);
+
+	return cmp;
+}
+
+/* Given a language code and SD voice code, sets the voice. */
+static void baratinoo_set_language_and_voice(char *lang, SPDVoiceType voice_code)
+{
+	int i;
+	int best_match = -1;
+	int nth_match = 0;
+	int offset = 0; /* nth voice we'd like */
+	BaratinooVoiceInfo best_info;
+
+	DBG(DBG_MODNAME "set_language_and_voice(lang=%s, voice_code=%d)",
+	    lang, voice_code);
+
+	switch (voice_code) {
+	case SPD_MALE3:
+	case SPD_FEMALE3:
+		offset++;
+	case SPD_MALE2:
+	case SPD_FEMALE2:
+		offset++;
+	default:
+		break;
+	}
+
+	for (i = 0; i < BCgetNumberOfVoices(baratinoo_engine); i++) {
+		if (i == 0) {
+			best_match = i;
+			best_info = BCgetVoiceInfo(baratinoo_engine, i);
+			nth_match++;
+		} else {
+			BaratinooVoiceInfo info = BCgetVoiceInfo(baratinoo_engine, i);
+			int cmp = sort_voice(&best_info, &info, lang, voice_code);
+
+			if (cmp >= 0) {
+				if (cmp > 0)
+					nth_match = 0;
+				if (nth_match <= offset) {
+					best_match = i;
+					best_info = info;
+				}
+				nth_match++;
+			}
+		}
+	}
+
+	if (best_match < 0) {
+		DBG(DBG_MODNAME "No voice match found, not changing voice.");
+	} else {
+		DBG(DBG_MODNAME "Best voice match is %d.", best_match);
+		baratinoo_voice = best_match;
+	}
+}
+
+/* UPDATE_PARAMETER callback to set the voice type */
+static void baratinoo_set_voice_type(SPDVoiceType voice)
+{
+	assert(msg_settings.voice.language);
+	baratinoo_set_language_and_voice(msg_settings.voice.language, voice);
+}
+
+/* UPDATE_PARAMETER callback to set the voice language */
+static void baratinoo_set_language(char *lang)
+{
+	baratinoo_set_language_and_voice(lang, msg_settings.voice_type);
+}
+
+/* UPDATE_PARAMETER callback to set the voice by name */
+static void baratinoo_set_synthesis_voice(char *synthesis_voice)
+{
+	int i;
+
+	if (synthesis_voice == NULL)
+		return;
+
+	for (i = 0; i < BCgetNumberOfVoices(baratinoo_engine); i++) {
+		BaratinooVoiceInfo info = BCgetVoiceInfo(baratinoo_engine, i);
+
+		if (strcmp(synthesis_voice, info.name) == 0) {
+			baratinoo_voice = i;
+			return;
+		}
+	}
+
+	DBG(DBG_MODNAME "Failed to set synthesis voice to '%s': not found.",
+	    synthesis_voice);
+}
+
+/* Engine callbacks */
+
+/**
+ * @brief Logs a message from Baratinoo
+ * @param level Message importance.
+ * @param engine_num ID of the engine that emitted the message, or 0 if it is a
+ *                   library message.
+ * @param source Message category.
+ * @param data Private data, unused.
+ * @param format printf-like @p format.
+ * @param args arguments for @p format.
+ */
+static void baratinoo_trace_cb(BaratinooTraceLevel level, int engine_num, const char *source, const void *data, const char *format, va_list args)
+{
+	const char *prefix = "";
+
+	if (!Debug) {
+		switch (level) {
+		case BARATINOO_TRACE_INIT:
+		case BARATINOO_TRACE_INFO:
+		case BARATINOO_TRACE_DEBUG:
+			return;
+		default:
+			break;
+		}
+	}
+
+	switch (level) {
+	case BARATINOO_TRACE_ERROR:
+		prefix = "ERROR";
+		break;
+	case BARATINOO_TRACE_INIT:
+		prefix = "INIT";
+		break;
+	case BARATINOO_TRACE_WARNING:
+		prefix = "WARNING";
+		break;
+	case BARATINOO_TRACE_INFO:
+		prefix = "INFO";
+		break;
+	case BARATINOO_TRACE_DEBUG:
+		prefix = "DEBUG";
+		break;
+	}
+
+	if (engine_num == 0)
+		fprintf(stderr, "Baratinoo library: ");
+	else
+		fprintf(stderr, "Baratinoo engine #%d: ", engine_num);
+	fprintf(stderr, "%s: %s ", prefix, source);
+	vfprintf(stderr, format, args);
+	fprintf(stderr, "\n");
+}
+
+/**
+ * @brief Output (sound) callback
+ * @param privateData Unused.
+ * @param address Audio samples.
+ * @param length Length of @p address, in bytes.
+ * @returns 0.
+ *
+ * Called by the engine during speech synthesis.
+ *
+ * @see BCprocessLoop()
+ */
+static int baratinoo_output_signal_cb(void *privateData, const void *address, int length)
+{
+	AudioTrack track;
+#if defined(BYTE_ORDER) && (BYTE_ORDER == BIG_ENDIAN)
+	AudioFormat format = SPD_AUDIO_BE;
+#else
+	AudioFormat format = SPD_AUDIO_LE;
+#endif
+
+	/* If stop is requested during synthesis, abort here to stop speech as
+	 * early as possible, even if the engine didn't finish its cycle yet. */
+	if (baratinoo_stop_requested) {
+		DBG(DBG_MODNAME "Not playing message because it got stopped");
+		return 0;
+	}
+
+	/* We receive 16 bits PCM data */
+	track.num_samples = length / 2; /* 16 bits per sample = 2 bytes */
+	track.num_channels = 1;
+	track.sample_rate = BaratinooSampleRate;
+	track.bits = 16;
+	track.samples = (short *) address;
+
+	DBG(DBG_MODNAME "Playing part of the message");
+	if (module_tts_output(track, format) < 0)
+		DBG(DBG_MODNAME "ERROR: failed to play the track");
+
+	return 0;
+}
+
+/* SSML conversion functions */
+
+/* locates a string in a NULL-terminated array of strings
+ * Returns -1 if not found, the index otherwise. */
+static int attribute_index(const char **names, const char *name)
+{
+	int i;
+
+	for (i = 0; names && names[i] != NULL; i++) {
+		if (strcmp(names[i], name) == 0)
+			return i;
+	}
+
+	return -1;
+}
+
+/* Markup element start callback */
+static void ssml2baratinoo_start_element(GMarkupParseContext *ctx,
+					 const gchar *element,
+					 const gchar **attribute_names,
+					 const gchar **attribute_values,
+					 gpointer buffer, GError **error)
+{
+	if (strcmp(element, "mark") == 0) {
+		int i = attribute_index(attribute_names, "name");
+		g_string_append_printf(buffer, "\\mark{%s}",
+				       i < 0 ? "" : attribute_values[i]);
+	} else if (strcmp(element, "emphasis") == 0) {
+		int i = attribute_index(attribute_names, "level");
+		g_string_append_printf(buffer, "\\emph<{%s}",
+				       i < 0 ? "" : attribute_values[i]);
+	} else {
+		/* ignore other elements */
+		/* TODO: handle more elements */
+	}
+}
+
+/* Markup element end callback */
+static void ssml2baratinoo_end_element(GMarkupParseContext *ctx,
+				       const gchar *element,
+				       gpointer buffer, GError **error)
+{
+	if (strcmp(element, "emphasis") == 0) {
+		g_string_append(buffer, "\\emph>{}");
+	}
+}
+
+/* Markup text node callback */
+static void ssml2baratinoo_text(GMarkupParseContext *ctx,
+				const gchar *text, gsize len,
+				gpointer buffer, GError **error)
+{
+	gsize i;
+
+	for (i = 0; i < len; i++) {
+		if (text[i] == '\\') {
+			/* escape the \ by appending a comment so it won't be
+			 * interpreted as a command */
+			g_string_append(buffer, "\\\\{}");
+		} else {
+			g_string_append_c(buffer, text[i]);
+		}
+	}
+}
+
+/**
+ * @brief Converts SSML data to Baratinoo's proprietary format.
+ * @param buf A buffer to write to.
+ * @param data SSML data to convert.
+ * @param size Length of @p data
+ *
+ * @warning Only a subset of the input SSML is currently translated, the rest
+ *          being discarded.
+ */
+static void append_ssml_as_proprietary(GString *buf, const char *data, gsize size)
+{
+	/* FIXME: we could possibly use SSML mode, but the Baratinoo parser is
+	 * very strict and *requires* "xmlns", "version" and "lang" attributes
+	 * on the <speak> tag, which speech-dispatcher doesn't provide.
+	 *
+	 * Moreover, we need to add tags for volume/rate/pitch so we'd have to
+	 * amend the data anyway. */
+	static const GMarkupParser parser = {
+		.start_element = ssml2baratinoo_start_element,
+		.end_element = ssml2baratinoo_end_element,
+		.text = ssml2baratinoo_text,
+	};
+	GMarkupParseContext *ctx;
+	GError *err = NULL;
+
+	ctx = g_markup_parse_context_new(&parser, G_MARKUP_TREAT_CDATA_AS_TEXT,
+					 buf, NULL);
+	if (!g_markup_parse_context_parse(ctx, data, size, &err) ||
+	    !g_markup_parse_context_end_parse(ctx, &err)) {
+		DBG(DBG_MODNAME "Failed to convert SSML: %s", err->message);
+		g_error_free(err);
+	}
+
+	g_markup_parse_context_free(ctx);
 }
