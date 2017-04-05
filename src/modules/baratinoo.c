@@ -309,16 +309,16 @@ int module_init(char **status_info)
 	DBG(DBG_MODNAME "creating new thread for baratinoo_speak");
 	ret = pthread_create(&baratinoo_speak_thread, NULL, _baratinoo_speak, NULL);
 	if (ret != 0) {
-		BCdelete(baratinoo_engine);
-		BCterminatelib();
-		sem_destroy(&baratinoo_semaphore);
-
 		DBG(DBG_MODNAME "thread creation failed");
 		*status_info =
 		    g_strdup("The module couldn't initialize threads. "
 			     "This could be either an internal problem or an "
 			     "architecture problem. If you are sure your architecture "
 			     "supports threads, please report a bug.");
+
+		BCdelete(baratinoo_engine);
+		BCterminatelib();
+		sem_destroy(&baratinoo_semaphore);
 		return -1;
 	}
 
