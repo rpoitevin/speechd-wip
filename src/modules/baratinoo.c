@@ -105,6 +105,8 @@ int module_load(void)
 
 	REGISTER_DEBUG();
 
+	/* BaratinooConfigPath default value comes from the environment or
+	 * user XDG configuration location */
 	conf_env = getenv("BARATINOO_CONFIG_PATH");
 	if (conf_env && conf_env[0] != '\0') {
 		default_config = g_strdup(conf_env);
@@ -185,6 +187,8 @@ static int baratinoo_output_signal_cb(void *privateData, const void *address, in
 {
 	AudioTrack track;
 
+	/* If stop is requested during synthesis, abort here to stop speech as
+	 * early as possible, even if the engine didn't finish its cycle yet. */
 	if (baratinoo_stop_requested) {
 		DBG(DBG_MODNAME "Not playing message because it got stopped");
 		return 0;
@@ -299,11 +303,13 @@ int module_init(char **status_info)
 		return -1;
 	}
 
+	/* Setup output (audio) signal handling */
 	BCsetOutputSignal(baratinoo_engine, baratinoo_output_signal_cb,
 			  NULL, BARATINOO_PCM, 16000 /* default frequency */);
 
 	BCsetWantedEvent(baratinoo_engine, BARATINOO_MARKER_EVENT);
 
+	/* Setup TTS thread */
 	sem_init(&baratinoo_semaphore, 0, 0);
 
 	DBG(DBG_MODNAME "creating new thread for baratinoo_speak");
@@ -736,13 +742,14 @@ int module_close(void)
 
 	DBG(DBG_MODNAME "Terminating threads");
 
+	/* Politely ask the thread to terminate */
 	baratinoo_stop_requested = TRUE;
 	baratinoo_close_requested = TRUE;
 	sem_post(&baratinoo_semaphore);
-	/* Give threads a chance to quit on their own terms. */
+	/* ...and give it a chance to actually quit. */
 	g_usleep(25000);
 
-	/* Make sure threads have really exited */
+	/* Make sure the thread has really exited */
 	pthread_cancel(baratinoo_speak_thread);
 	DBG(DBG_MODNAME "Joining threads.");
 	if (pthread_join(baratinoo_speak_thread, NULL) != 0)
