@@ -122,6 +122,7 @@ MOD_OPTION_1_INT(BaratinooSampleRate);
 MOD_OPTION_1_INT(BaratinooMinRate);
 MOD_OPTION_1_INT(BaratinooNormalRate);
 MOD_OPTION_1_INT(BaratinooMaxRate);
+MOD_OPTION_1_STR(BaratinooPunctuationList);
 
 /* Public functions */
 
@@ -153,6 +154,9 @@ int module_load(void)
 	MOD_OPTION_1_INT_REG(BaratinooMinRate, -100);
 	MOD_OPTION_1_INT_REG(BaratinooNormalRate, 0);
 	MOD_OPTION_1_INT_REG(BaratinooMaxRate, 100);
+
+	/* Punctuation */
+	MOD_OPTION_1_STR_REG(BaratinooPunctuationList, "@/+-_");
 
 	return 0;
 }
@@ -887,15 +891,40 @@ static void ssml2baratinoo_text(GMarkupParseContext *ctx,
 				const gchar *text, gsize len,
 				gpointer buffer, GError **error)
 {
-	gsize i;
+	const gchar *p;
 
-	for (i = 0; i < len; i++) {
-		if (text[i] == '\\') {
+	for (p = text; p < (text + len); p = g_utf8_next_char(p)) {
+		if (*p == '\\') {
 			/* escape the \ by appending a comment so it won't be
 			 * interpreted as a command */
 			g_string_append(buffer, "\\\\{}");
 		} else {
-			g_string_append_c(buffer, text[i]);
+			gboolean say_as_char;
+			gunichar ch = g_utf8_get_char(p);
+
+			/* if punctuation mode is not NONE and the character
+			 * should be spoken, manually wrap it with \sayas */
+			say_as_char = ((msg_settings.punctuation_mode == SPD_PUNCT_SOME &&
+					g_utf8_strchr(BaratinooPunctuationList, -1, ch)) ||
+				       (msg_settings.punctuation_mode == SPD_PUNCT_ALL &&
+					g_unichar_ispunct(ch)));
+
+			/* FIXME: we should keep the punctuation meaning of the
+			 * character, e.g. how it affects intonation and pauses.
+			 *
+			 * To do so we possibly could repeat the punctuation after
+			 * the \sayas, but unfortunately we can't really know when
+			 * to do that because not all languages (voices?) interpret
+			 * punctuation the same or in the same context.
+			 * E.g. the en-GB "Paul" voice will interpret "1.2.3" as
+			 * "one dot two dot three" (which seems reasonable),
+			 * but the fr-FR "Philippe" voice will interpret it as
+			 * "1. 2. 3." (which sounds silly, but whatever). */
+			if (say_as_char)
+				g_string_append(buffer, "\\sayas<{characters}");
+			g_string_append_unichar(buffer, ch);
+			if (say_as_char)
+				g_string_append(buffer, "\\sayas>{}");
 		}
 	}
 }
