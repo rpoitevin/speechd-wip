@@ -123,6 +123,7 @@ MOD_OPTION_1_INT(BaratinooMinRate);
 MOD_OPTION_1_INT(BaratinooNormalRate);
 MOD_OPTION_1_INT(BaratinooMaxRate);
 MOD_OPTION_1_STR(BaratinooPunctuationList);
+MOD_OPTION_1_STR(BaratinooIntonationList);
 
 /* Public functions */
 
@@ -157,6 +158,7 @@ int module_load(void)
 
 	/* Punctuation */
 	MOD_OPTION_1_STR_REG(BaratinooPunctuationList, "@/+-_");
+	MOD_OPTION_1_STR_REG(BaratinooIntonationList, "?!;:,.");
 
 	return 0;
 }
@@ -923,8 +925,30 @@ static void ssml2baratinoo_text(GMarkupParseContext *ctx,
 			if (say_as_char)
 				g_string_append(buffer, "\\sayas<{characters}");
 			g_string_append_unichar(buffer, ch);
-			if (say_as_char)
+			if (say_as_char) {
 				g_string_append(buffer, "\\sayas>{}");
+
+				/* if the character should influence intonation,
+				 * add it back, but *only* if it wouldn't be spoken */
+				if (g_utf8_strchr(BaratinooIntonationList, -1, ch)) {
+					const gchar *next = g_utf8_next_char(p);
+					gunichar ch_next;
+
+					if (next < text + len)
+						ch_next = g_utf8_get_char(next);
+					else
+						ch_next = '\n';
+
+					if (!g_unichar_isalnum(ch_next) &&
+					    !g_unichar_ispunct(ch_next)) {
+						g_string_append_unichar(buffer, ch);
+						/* Append an extra space to try and
+						 * make sure it's considered as
+						 * punctuation and isn't spoken. */
+						g_string_append_c(buffer, ' ');
+					}
+				}
+			}
 		}
 	}
 }
