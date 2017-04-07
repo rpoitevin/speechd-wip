@@ -529,6 +529,11 @@ static void *_baratinoo_speak(void *data)
 							module_report_event_pause();
 						}
 					}
+				} else if (state == BARATINOO_INPUT_ERROR ||
+					   state == BARATINOO_ENGINE_ERROR) {
+					/* CANCEL would be better I guess, but
+					 * that's good enough */
+					module_report_event_stop();
 				}
 			}
 		} while (state == BARATINOO_RUNNING || state == BARATINOO_EVENT);
