@@ -281,7 +281,7 @@ int module_speak(gchar *data, size_t bytes, SPDMessageType msgtype)
 	 * ID when creating the buffer too */
 	/* NOTE: these functions access the engine, which wouldn't be safe if
 	 *       we didn't know that the thread is sleeping.  But we do know it
-	 *       is, as @c baratinoo_text_buffer is NULL */
+	 *       is, as @c Engine::buffer is NULL */
 	UPDATE_STRING_PARAMETER(voice.language, baratinoo_set_language);
 	UPDATE_PARAMETER(voice_type, baratinoo_set_voice_type);
 	UPDATE_STRING_PARAMETER(voice.name, baratinoo_set_synthesis_voice);
@@ -478,8 +478,8 @@ static SPDVoice **baratinoo_list_voices(BCengine *engine)
  * @param data An Engine structure.
  * @returns NULL.
  *
- * The TTS thread.  It waits on @c baratinoo_semaphore to consume input data
- * from @c baratinoo_text_buffer.
+ * The TTS thread.  It waits on @c Engine::semaphore to consume input data
+ * from @c Engine::buffer.
  *
  * @see Engine::pause_requested
  * @see Engine::stop_requested
