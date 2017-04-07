@@ -893,7 +893,60 @@ static void ssml2baratinoo_end_element(GMarkupParseContext *ctx,
 	}
 }
 
-/* Markup text node callback */
+/* Markup text node callback.
+ *
+ * This not only converts to the proprietary format (by escaping things that
+ * would be interpreted by it), but also pre-processes the text for some
+ * features that are missing from Baratinoo.
+ *
+ * - Punctuation speaking
+ *
+ * As the engine doesn't support speaking of the punctuation itself, we alter
+ * the input to explicitly tell the engine to do it.  It is kind of tricky,
+ * because we want to keep the punctuation meaning of the characters, e.g. how
+ * they affect speech as means of intonation and pauses.
+ *
+ * The approach here is that for every punctuation character included in the
+ * selected mode (none/some/all), we wrap it in "\sayas<{characters}" markup
+ * so that it is spoken by the engine.  But in order to keep the punctuation
+ * meaning of the character, in case it has some, we duplicate it outside the
+ * markup with a heuristic on whether it will or not affect speech intonation
+ * and pauses, and whether or not the engine would speak the character itself
+ * already (as we definitely don't want to get duplicated speech for a
+ * character).
+ * This heuristic is as follows:
+ *   - If the character is listed in BaratinooIntonationList and the next
+ *     character is not punctuation or alphanumeric, duplicate the character.
+ *   - Always append a space after a duplicated character, hoping the engine
+ *     won't consider speaking it.
+ *
+ * This won't always give the same results as the engine would by itself, but
+ * it isn't really possible as the engine behavior is language-dependent in a
+ * non-obvious fashion.  For example, a French voice will speak "1.2.3" as
+ * "Un. Deux. Trois", while an English one will speak it as "One dot two dot
+ * three": the dot here didn't have the same interpretation, and wasn't spoken
+ * the same (once altering the voice, the other spoken plain and simple).
+ *
+ * However, the heuristic here should be highly unlikely to lead to duplicate
+ * character speaking, and catch most of the intonation and pause cases.
+ *
+ * - Why is this done that way?
+ *
+ * Another, possibly more robust, approach could be using 2 passes in the
+ * engine itself, and relying on events to get information on how the engine
+ * interprets the input in the first (silent) pass, and alter it as needed for
+ * a second (spoken) pass.  This wouldn't guarantee the altered input would be
+ * interpreted the same, but it would seem like a safe enough bet.
+ *
+ * However, the engine is too slow for this to be viable in a real-time
+ * processing environment for anything but tiny input.  Even about 25 lines of
+ * IRC conversation can easily take several seconds to process in the first
+ * pass (even without doing any actual pre-processing on our end), delaying
+ * the actual speech by an unacceptable amount of time.
+ *
+ * Ideally, the engine will some day support speaking punctuation itself, and
+ * this part of the pre-processing could be dropped.
+ */
 static void ssml2baratinoo_text(GMarkupParseContext *ctx,
 				const gchar *text, gsize len,
 				gpointer buffer, GError **error)
@@ -916,17 +969,6 @@ static void ssml2baratinoo_text(GMarkupParseContext *ctx,
 				       (msg_settings.punctuation_mode == SPD_PUNCT_ALL &&
 					g_unichar_ispunct(ch)));
 
-			/* FIXME: we should keep the punctuation meaning of the
-			 * character, e.g. how it affects intonation and pauses.
-			 *
-			 * To do so we possibly could repeat the punctuation after
-			 * the \sayas, but unfortunately we can't really know when
-			 * to do that because not all languages (voices?) interpret
-			 * punctuation the same or in the same context.
-			 * E.g. the en-GB "Paul" voice will interpret "1.2.3" as
-			 * "one dot two dot three" (which seems reasonable),
-			 * but the fr-FR "Philippe" voice will interpret it as
-			 * "1. 2. 3." (which sounds silly, but whatever). */
 			if (say_as_char)
 				g_string_append(buffer, "\\sayas<{characters}");
 			g_string_append_unichar(buffer, ch);
