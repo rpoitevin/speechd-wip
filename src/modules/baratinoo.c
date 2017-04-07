@@ -172,6 +172,9 @@ int module_init(char **status_info)
 	DBG(DBG_MODNAME "Module init");
 	INIT_INDEX_MARKING();
 
+	DBG(DBG_MODNAME "BaratinooPunctuationList = %s", BaratinooPunctuationList);
+	DBG(DBG_MODNAME "BaratinooIntonationList = %s", BaratinooIntonationList);
+
 	*status_info = NULL;
 
 	engine->pause_requested = FALSE;
