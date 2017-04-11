@@ -525,7 +525,7 @@ static void *_baratinoo_speak(void *data)
 						module_report_index_mark((char *) event.data.marker.name);
 						/* if reached a spd mark and pausing requested, stop */
 						if (engine->pause_requested &&
-						    g_str_has_prefix(event.data.marker.name, "__spd_")) {
+						    g_str_has_prefix(event.data.marker.name, INDEX_MARK_BODY)) {
 							DBG(DBG_MODNAME "Pausing in thread");
 							state = BCpurge(engine->engine);
 							engine->pause_requested = FALSE;
