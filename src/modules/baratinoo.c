@@ -114,7 +114,7 @@ static void baratinoo_set_synthesis_voice(char *synthesis_voice);
 static void baratinoo_trace_cb(BaratinooTraceLevel level, int engine_num, const char *source, const void *data, const char *format, va_list args);
 static int baratinoo_output_signal_cb(void *privateData, const void *address, int length);
 /* SSML conversion functions */
-static void append_ssml_as_proprietary(GString *buf, const char *data, gsize size);
+static void append_ssml_as_proprietary(const Engine *engine, GString *buf, const char *data, gsize size);
 
 /* Module configuration options */
 MOD_OPTION_1_STR(BaratinooConfigPath);
@@ -321,12 +321,12 @@ int module_speak(gchar *data, size_t bytes, SPDMessageType msgtype)
 	case SPD_MSGTYPE_SPELL: /* FIXME: use \spell one day? */
 	case SPD_MSGTYPE_CHAR:
 		g_string_append(buffer, "\\sayas<{characters}");
-		append_ssml_as_proprietary(buffer, data, bytes);
+		append_ssml_as_proprietary(engine, buffer, data, bytes);
 		g_string_append(buffer, "\\sayas>{}");
 		break;
 	default: /* FIXME: */
 	case SPD_MSGTYPE_TEXT:
-		append_ssml_as_proprietary(buffer, data, bytes);
+		append_ssml_as_proprietary(engine, buffer, data, bytes);
 		break;
 	}
 
@@ -662,8 +662,8 @@ static int sort_voice(const BaratinooVoiceInfo *a, const BaratinooVoiceInfo *b, 
 	return cmp;
 }
 
-/* Given a language code and SD voice code, sets the voice. */
-static void baratinoo_set_language_and_voice(Engine *engine, char *lang, SPDVoiceType voice_code)
+/* Given a language code and SD voice code, gets the Baratinoo voice. */
+static int baratinoo_find_voice(const Engine *engine, const char *lang, SPDVoiceType voice_code)
 {
 	int i;
 	int best_match = -1;
@@ -671,7 +671,7 @@ static void baratinoo_set_language_and_voice(Engine *engine, char *lang, SPDVoic
 	int offset = 0; /* nth voice we'd like */
 	BaratinooVoiceInfo best_info;
 
-	DBG(DBG_MODNAME "set_language_and_voice(lang=%s, voice_code=%d)",
+	DBG(DBG_MODNAME "baratinoo_find_voice(lang=%s, voice_code=%d)",
 	    lang, voice_code);
 
 	switch (voice_code) {
@@ -706,11 +706,19 @@ static void baratinoo_set_language_and_voice(Engine *engine, char *lang, SPDVoic
 		}
 	}
 
-	if (best_match < 0) {
+	return best_match;
+}
+
+/* Given a language code and SD voice code, sets the voice. */
+static void baratinoo_set_language_and_voice(Engine *engine, const char *lang, SPDVoiceType voice_code)
+{
+	int voice = baratinoo_find_voice(engine, lang, voice_code);
+
+	if (voice < 0) {
 		DBG(DBG_MODNAME "No voice match found, not changing voice.");
 	} else {
-		DBG(DBG_MODNAME "Best voice match is %d.", best_match);
-		engine->voice = best_match;
+		DBG(DBG_MODNAME "Best voice match is %d.", voice);
+		engine->voice = voice;
 	}
 }
 
@@ -851,6 +859,56 @@ static int baratinoo_output_signal_cb(void *private_data, const void *address, i
 
 /* SSML conversion functions */
 
+typedef struct {
+	const Engine *engine;
+	GString *buffer;
+	/* Voice ID stack for the current element */
+	int voice_stack[32];
+	unsigned int voice_stack_len;
+} SsmlPraserState;
+
+/* Adds a language change command for @p lang if appropriate */
+static void ssml2baratinoo_push_lang(SsmlPraserState *state, const char *lang)
+{
+	int voice;
+
+	if (state->voice_stack_len > 0)
+		voice = state->voice_stack[state->voice_stack_len - 1];
+	else
+		voice = state->engine->voice;
+
+	if (lang) {
+		DBG(DBG_MODNAME "Processing xml:lang=\"%s\"", lang);
+		int new_voice = baratinoo_find_voice(&baratinoo_engine, lang,
+						     msg_settings.voice_type);
+		if (new_voice >= 0 && new_voice != voice) {
+			g_string_append_printf(state->buffer, "\\vox{%d}", new_voice);
+			voice = new_voice;
+		}
+	}
+
+	if (state->voice_stack_len >= G_N_ELEMENTS(state->voice_stack)) {
+		DBG(DBG_MODNAME "WARNING: voice stack exhausted, expect incorrect voices.");
+	} else {
+		state->voice_stack[state->voice_stack_len++] = voice;
+	}
+}
+
+/* Pops a language pushed with @c ssml2baratinoo_push_lang() */
+static void ssml2baratinoo_pop_lang(SsmlPraserState *state)
+{
+	if (state->voice_stack_len > 0) {
+		int cur_voice = state->voice_stack[--state->voice_stack_len];
+
+		if (state->voice_stack_len > 0) {
+			int new_voice = state->voice_stack[state->voice_stack_len - 1];
+
+			if (new_voice != cur_voice)
+				g_string_append_printf(state->buffer, "\\vox{%d}", new_voice);
+		}
+	}
+}
+
 /* locates a string in a NULL-terminated array of strings
  * Returns -1 if not found, the index otherwise. */
 static int attribute_index(const char **names, const char *name)
@@ -870,15 +928,23 @@ static void ssml2baratinoo_start_element(GMarkupParseContext *ctx,
 					 const gchar *element,
 					 const gchar **attribute_names,
 					 const gchar **attribute_values,
-					 gpointer buffer, GError **error)
+					 gpointer data, GError **error)
 {
+	SsmlPraserState *state = data;
+	int lang_id;
+
+	/* handle voice changes */
+	lang_id = attribute_index(attribute_names, "xml:lang");
+	ssml2baratinoo_push_lang(state, lang_id < 0 ? NULL : attribute_values[lang_id]);
+
+	/* handle elements */
 	if (strcmp(element, "mark") == 0) {
 		int i = attribute_index(attribute_names, "name");
-		g_string_append_printf(buffer, "\\mark{%s}",
+		g_string_append_printf(state->buffer, "\\mark{%s}",
 				       i < 0 ? "" : attribute_values[i]);
 	} else if (strcmp(element, "emphasis") == 0) {
 		int i = attribute_index(attribute_names, "level");
-		g_string_append_printf(buffer, "\\emph<{%s}",
+		g_string_append_printf(state->buffer, "\\emph<{%s}",
 				       i < 0 ? "" : attribute_values[i]);
 	} else {
 		/* ignore other elements */
@@ -889,11 +955,15 @@ static void ssml2baratinoo_start_element(GMarkupParseContext *ctx,
 /* Markup element end callback */
 static void ssml2baratinoo_end_element(GMarkupParseContext *ctx,
 				       const gchar *element,
-				       gpointer buffer, GError **error)
+				       gpointer data, GError **error)
 {
+	SsmlPraserState *state = data;
+
 	if (strcmp(element, "emphasis") == 0) {
-		g_string_append(buffer, "\\emph>{}");
+		g_string_append(state->buffer, "\\emph>{}");
 	}
+
+	ssml2baratinoo_pop_lang(state);
 }
 
 /* Markup text node callback.
@@ -952,15 +1022,16 @@ static void ssml2baratinoo_end_element(GMarkupParseContext *ctx,
  */
 static void ssml2baratinoo_text(GMarkupParseContext *ctx,
 				const gchar *text, gsize len,
-				gpointer buffer, GError **error)
+				gpointer data, GError **error)
 {
+	SsmlPraserState *state = data;
 	const gchar *p;
 
 	for (p = text; p < (text + len); p = g_utf8_next_char(p)) {
 		if (*p == '\\') {
 			/* escape the \ by appending a comment so it won't be
 			 * interpreted as a command */
-			g_string_append(buffer, "\\\\{}");
+			g_string_append(state->buffer, "\\\\{}");
 		} else {
 			gboolean say_as_char;
 			gunichar ch = g_utf8_get_char(p);
@@ -973,10 +1044,10 @@ static void ssml2baratinoo_text(GMarkupParseContext *ctx,
 					g_unichar_ispunct(ch)));
 
 			if (say_as_char)
-				g_string_append(buffer, "\\sayas<{characters}");
-			g_string_append_unichar(buffer, ch);
+				g_string_append(state->buffer, "\\sayas<{characters}");
+			g_string_append_unichar(state->buffer, ch);
 			if (say_as_char) {
-				g_string_append(buffer, "\\sayas>{}");
+				g_string_append(state->buffer, "\\sayas>{}");
 
 				/* if the character should influence intonation,
 				 * add it back, but *only* if it wouldn't be spoken */
@@ -991,11 +1062,11 @@ static void ssml2baratinoo_text(GMarkupParseContext *ctx,
 
 					if (!g_unichar_isalnum(ch_next) &&
 					    !g_unichar_ispunct(ch_next)) {
-						g_string_append_unichar(buffer, ch);
+						g_string_append_unichar(state->buffer, ch);
 						/* Append an extra space to try and
 						 * make sure it's considered as
 						 * punctuation and isn't spoken. */
-						g_string_append_c(buffer, ' ');
+						g_string_append_c(state->buffer, ' ');
 					}
 				}
 			}
@@ -1012,7 +1083,7 @@ static void ssml2baratinoo_text(GMarkupParseContext *ctx,
  * @warning Only a subset of the input SSML is currently translated, the rest
  *          being discarded.
  */
-static void append_ssml_as_proprietary(GString *buf, const char *data, gsize size)
+static void append_ssml_as_proprietary(const Engine *engine, GString *buf, const char *data, gsize size)
 {
 	/* FIXME: we could possibly use SSML mode, but the Baratinoo parser is
 	 * very strict and *requires* "xmlns", "version" and "lang" attributes
@@ -1025,11 +1096,16 @@ static void append_ssml_as_proprietary(GString *buf, const char *data, gsize siz
 		.end_element = ssml2baratinoo_end_element,
 		.text = ssml2baratinoo_text,
 	};
+	SsmlPraserState state = {
+		.engine = engine,
+		.buffer = buf,
+		.voice_stack_len = 0,
+	};
 	GMarkupParseContext *ctx;
 	GError *err = NULL;
 
 	ctx = g_markup_parse_context_new(&parser, G_MARKUP_TREAT_CDATA_AS_TEXT,
-					 buf, NULL);
+					 &state, NULL);
 	if (!g_markup_parse_context_parse(ctx, data, size, &err) ||
 	    !g_markup_parse_context_end_parse(ctx, &err)) {
 		DBG(DBG_MODNAME "Failed to convert SSML: %s", err->message);
