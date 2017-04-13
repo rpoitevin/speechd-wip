@@ -751,7 +751,7 @@ static void baratinoo_set_synthesis_voice(char *synthesis_voice)
 	for (i = 0; i < BCgetNumberOfVoices(engine->engine); i++) {
 		BaratinooVoiceInfo info = BCgetVoiceInfo(engine->engine, i);
 
-		if (strcmp(synthesis_voice, info.name) == 0) {
+		if (g_ascii_strcasecmp(synthesis_voice, info.name) == 0) {
 			engine->voice = i;
 			return;
 		}
