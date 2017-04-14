@@ -85,7 +85,6 @@ typedef struct {
 
 /* Represents a loaded and cached set of symbols in a usable form */
 typedef struct {
-	char *locale; /* locale for which this processor applies */
 	GRegex *regex; /* compiled regular expression for parsing input */
 	/* Table of identifier(string):symbol(SpeechSymbol).
 	 * Indexes are pointers to symbol->identifier. */
@@ -431,7 +430,6 @@ static void speech_symbols_processor_free(SpeechSymbolProcessor *ssp)
 {
 	if (ssp->regex)
 		g_regex_unref(ssp->regex);
-	g_free(ssp->locale);
 	g_list_free(ssp->complex_list);
 	if (ssp->symbols)
 		g_hash_table_unref(ssp->symbols);
@@ -469,7 +467,6 @@ static SpeechSymbolProcessor *speech_symbols_processor_new(const char *locale)
 	}
 
 	ssp = g_malloc(sizeof *ssp);
-	ssp->locale = g_strdup(locale);
 	/* The computed symbol information from all sources. */
 	ssp->symbols = g_hash_table_new_full(g_str_hash, g_str_equal,
 					     NULL,
