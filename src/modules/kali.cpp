@@ -446,59 +446,59 @@ void kali_set_punctuation_mode(SPDPunctuation punct)
 
 static void kali_set_voice(char *voice)
 {
-  short i, nlang;
-  char *v;
+	short i, nlang;
+	char *v;
 
-  v = (char *)g_malloc(sizeof(char *));
+	v = (char *)g_malloc(sizeof(char *));
 
-  if (voice == NULL) {
-    v = g_strdup(KaliVoiceParameters);
-  } else {
-    v = g_strdup(voice);
-  }
-  for (i = 0; kali_voice_list[i] != NULL; i++) {
-    if (strcasecmp(kali_voice_list[i]->name, v) == 0) {
-      nlang = GetNLangueVoixKaliStd(i + 1);
-      SetLangueKali(nlang);
-      SetVoixKali(i + 1);
-      break;
-    }
-  }
+	if (voice == NULL) {
+		v = g_strdup(KaliVoiceParameters);
+	} else {
+		v = g_strdup(voice);
+	}
+	for (i = 0; kali_voice_list[i] != NULL; i++) {
+		if (strcasecmp(kali_voice_list[i]->name, v) == 0) {
+			nlang = GetNLangueVoixKaliStd(i + 1);
+			SetLangueKali(nlang);
+			SetVoixKali(i + 1);
+			break;
+		}
+	}
 
-  g_free(v);
-  v = NULL;
+	g_free(v);
+	v = NULL;
 }
 
 static SPDVoice **kali_get_voices()
 {
-  short i;
-  SPDVoice **result = NULL;
-  short num_voices;
-  char *voice;
-  short nlang;
-  char *language;
+	short i;
+	SPDVoice **result = NULL;
+	short num_voices;
+	char *voice;
+	short nlang;
+	char *language;
 
-  num_voices = GetNbVoixKali();
-  DBG("Kali: %d voices total.", num_voices);
-  voice = (char *)g_malloc(sizeof(char *));
-  language = (char *)g_malloc(sizeof(char *));
-  result = g_new0(SPDVoice *, num_voices);
+	num_voices = GetNbVoixKali();
+	DBG("Kali: %d voices total.", num_voices);
+	voice = (char *)g_malloc(sizeof(char *));
+	language = (char *)g_malloc(sizeof(char *));
+	result = g_new0(SPDVoice *, num_voices);
 
-  for (i = 0; i < num_voices; i++) {
-    result[i] = g_new0(SPDVoice, 1);
-    GetNomVoixKali(i + 1, voice);
-    result[i]->name = (char *)g_strdup(voice);
-    nlang = GetNLangueVoixKaliStd(i + 1);
-    GetNomLangueKali(nlang, language);
-    result[i]->language = (char *)g_strdup(language);
-    result[i]->variant = NULL;
-  }
-  result[i] = NULL;
+	for (i = 0; i < num_voices; i++) {
+		result[i] = g_new0(SPDVoice, 1);
+		GetNomVoixKali(i + 1, voice);
+		result[i]->name = (char *)g_strdup(voice);
+		nlang = GetNLangueVoixKaliStd(i + 1);
+		GetNomLangueKali(nlang, language);
+		result[i]->language = (char *)g_strdup(language);
+		result[i]->variant = NULL;
+	}
+	result[i] = NULL;
 
-  g_free(voice);
-  voice = NULL;
-  g_free(language);
-  language = NULL;
+	g_free(voice);
+	voice = NULL;
+	g_free(language);
+	language = NULL;
 
-  return result;
+	return result;
 }
