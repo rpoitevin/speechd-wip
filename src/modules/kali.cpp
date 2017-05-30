@@ -399,32 +399,37 @@ void *_kali_speak(void *nothing)
 
 static void kali_set_rate(signed int rate)
 {
-  short speed;
+  short speed = 1;
 
   assert(rate >= -100 && rate <= +100);
-  speed = (short)rate + 6;
-  if (speed < GetDebitMinKaliStd())
-    speed = GetDebitMinKaliStd();
-  if (speed > GetDebitMaxKaliStd())
-    speed = GetDebitMaxKaliStd();
+  if (rate < 0)
+    speed = GetDebitMinKaliStd() * (short)rate / 100;
+  if (rate > 0)
+    speed = GetDebitMaxKaliStd() * (short)rate / 100;
   SetDebitKali(speed);
 }
 
 static void kali_set_volume(signed int volume)
 {
+  short vol = 1;
 
+  assert(volume >= -100 && volume <= +100);
+  if (volume < 0)
+    vol = GetVolumeMinKaliStd() * (short)volume / 100;
+  if (volume > 0)
+    vol = GetVolumeMaxKaliStd() * (short)volume / 100;
+  SetVolumeKali(vol);
 }
 
 static void kali_set_pitch(signed int pitch)
 {
-  short ptch;
+  short ptch = 1;
 
   assert(pitch >= -100 && pitch <= +100);
-  ptch = (short)pitch + 6;
-  if (ptch < GetHauteurMinKaliStd())
-    ptch = GetHauteurMinKaliStd();
-  if (ptch > GetHauteurMaxKaliStd())
-    ptch = GetHauteurMaxKaliStd();
+  if (pitch < 0)
+    ptch = GetHauteurMinKaliStd() * (short)pitch / 100;
+  if (pitch > 0)
+    ptch = GetHauteurMaxKaliStd() * (short)pitch / 100;
   SetHauteurKali((short)ptch);
 }
 
